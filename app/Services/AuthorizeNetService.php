@@ -107,7 +107,8 @@ class AuthorizeNetService {
 
         // Validate response
         if (!$response || $response->getMessages()->getResultCode() !== "Ok") {
-            $msg = $response?->getMessages()?->getMessage()[0]?->getText() ?? "Unknown error";
+            $messages = $response?->getMessages()?->getMessage();
+            $msg = ($messages && count($messages) > 0) ? $messages[0]->getText() : 'No response from payment gateway.';
             Log::error("AuthorizeNet createCustomerProfile error: $msg");
             throw new Exception("CreateCustomerProfile Error: $msg");
         }
@@ -163,7 +164,8 @@ class AuthorizeNetService {
         $response = $controller->executeWithApiResponse($this->environment);
 
         if (!$response || $response->getMessages()->getResultCode() !== "Ok") {
-            $msg = $response?->getMessages()?->getMessage()[0]?->getText() ?? "Unknown subscription error";
+            $messages = $response?->getMessages()?->getMessage();
+            $msg = ($messages && count($messages) > 0) ? $messages[0]->getText() : 'No response from payment gateway.';
             Log::error("AuthorizeNet createSubscription error: $msg");
             throw new Exception("Subscription Error: $msg");
         }
@@ -197,19 +199,34 @@ class AuthorizeNetService {
             $controller = new AnetController\CreateTransactionController($request);
             $response = $controller->executeWithApiResponse($this->environment);
 
-            if ($response != null &&
-                    $response->getMessages()->getResultCode() == "Ok" &&
-                    $response->getTransactionResponse()->getResponseCode() == "1"
+            $transactionResponse = $response?->getTransactionResponse();
+
+            if (
+                $response !== null &&
+                $response->getMessages()->getResultCode() == "Ok" &&
+                $transactionResponse !== null &&
+                $transactionResponse->getResponseCode() == "1"
             ) {
                 return [
-                    'success' => true,
-                    'transaction_id' => $response->getTransactionResponse()->getTransId()
+                    'success'        => true,
+                    'transaction_id' => $transactionResponse->getTransId(),
                 ];
+            }
+
+            // Extract the clearest available error message
+            $errors = $transactionResponse?->getErrors();
+            if ($errors && count($errors) > 0) {
+                $errorMsg = $errors[0]->getErrorText();
+            } else {
+                $messages = $response?->getMessages()?->getMessage();
+                $errorMsg = ($messages && count($messages) > 0)
+                    ? $messages[0]->getText()
+                    : 'No response from payment gateway.';
             }
 
             return [
                 'success' => false,
-                'message' => $response?->getTransactionResponse()?->getErrors()[0]?->getErrorText() ?? 'Unknown payment error'
+                'message' => $errorMsg,
             ];
         } catch (\Exception $e) {
             return [
