@@ -93,13 +93,7 @@
                     <p><strong>City:</strong> {{ $patient->city }}</p>
                 </div>
                 <div class="col-md-4">
-                    <p><strong>State:</strong> 
-                        @foreach($states as $state)
-                            @if($state->id == $patient->state)
-                                {{ $state->full }}
-                            @endif
-                        @endforeach
-                    </p>
+                    <p><strong>State:</strong> {{ $patient->state }}</p>
                 </div>
             </div>
 

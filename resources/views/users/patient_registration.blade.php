@@ -93,14 +93,17 @@
 
                     <div class="col-md-3">
                         <label class="form-label">State</label>
-                        <select class="form-select select2" name="state" required>
-                            <option></option>
+                        <input type="text" class="form-control" name="state"
+                               list="states-list"
+                               placeholder="Type a state..."
+                               value="{{ old('state') }}"
+                               autocomplete="off"
+                               required>
+                        <datalist id="states-list">
                             @foreach($states as $state)
-                            <option value="{{ $state->id }}" @if(old('state')==$state->id) selected @endif>
-                                {{ $state->full }}
-                            </option>
+                            <option value="{{ $state->full }}">{{ $state->abbreviation }}</option>
                             @endforeach
-                        </select>
+                        </datalist>
                     </div>
 
                     <div class="col-md-3">
@@ -508,12 +511,6 @@
             });
         });
 
-        $('select[name="state"]').select2({
-            theme: 'bootstrap-5',
-            placeholder: 'Search for a state...',
-            allowClear: true,
-            minimumResultsForSearch: 0,
-        });
 
         function anyYesSelected() {
             return $('.q-radio:checked[value="1"]').length > 0;
