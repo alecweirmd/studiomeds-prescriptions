@@ -308,7 +308,7 @@
         </div>
 
         <div class="card-footer text-end">
-            <button type="submit" class="btn btn-primary submit">
+            <button type="submit" class="btn btn-primary submit" id="submitBtn" disabled>
                 <i class="fas fa-save"></i> Submit
             </button>
         </div>
@@ -676,13 +676,25 @@
             return age;
         }
 
-        // Show follow-up warning live
+        function checkSubmitEnabled() {
+            if (allQuestionsAnswered()) {
+                $('#submitBtn').prop('disabled', false);
+            } else {
+                $('#submitBtn').prop('disabled', true);
+            }
+        }
+
+        // Check on page load (handles old() values after validation error)
+        checkSubmitEnabled();
+
+        // Show follow-up warning live and update submit button state
         $('.q-radio').on('change', function() {
             if (anyYesSelected()) {
                 $('#followUpHint').slideDown();
             } else {
                 $('#followUpHint').slideUp();
             }
+            checkSubmitEnabled();
         });
 
         // Intercept form submit → validate then open payment modal

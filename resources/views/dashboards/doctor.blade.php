@@ -76,13 +76,13 @@
                                             <p>{{ $p->artist_name }}</p>
                                             @endif
                                         </td>
-                                        <td>{{ $statusLabels[$p->patientsCQI->status] }}</td>
+                                        <td>{{ $p->patientsCQI ? $statusLabels[$p->patientsCQI->status] : 'Pending' }}</td>
                                         <td>{{ $p->created_at->format('m/d/Y') }}</td>
                                         <td>
                                             <a href="{{ url('/users/submitted_cqi/' . $p->id) }}" class="btn btn-sm btn-primary">
                                                 View CQI
                                             </a>
-                                            @if($p->patientsCQI->status == 0)
+                                            @if($p->patientsCQI && $p->patientsCQI->status == 0)
                                             <a class="btn btn-sm btn-success approve" data-id="{{ $p->id }}">Approve</a>
                                             <a class="btn btn-sm btn-danger reject" data-id="{{ $p->id }}">Reject</a>
                                             @endif
