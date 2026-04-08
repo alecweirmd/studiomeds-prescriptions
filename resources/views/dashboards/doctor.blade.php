@@ -230,9 +230,14 @@
             },
             success: function(response) {
                 $('a.reject[data-id="' + rejectPatientId + '"]').closest('tr').remove();
-                $('#content-2 tbody').prepend(response.row_html);
 
-                let rowHtml = '<tr><td>'+ response.patient.first_name + ' ' +  response.patient.last_name +'</td><td>'+ response.patient.artist_name +'</td><td>'+ response.patient.status +'</td><td>'+ response.patient.submitted_on +'</td><td><a href="/users/submitted_cqi/'+ response.patient.id +'" class="btn btn-sm btn-primary">View CQI</a></td></tr>';
+                let rowHtml = '<tr>'
+                    + '<td>' + response.patient.first_name + ' ' + response.patient.last_name + '</td>'
+                    + '<td>' + (response.patient.artist_name || '') + '</td>'
+                    + '<td>Rejected</td>'
+                    + '<td>' + response.patient.submitted_on + '</td>'
+                    + '<td><a href="/users/submitted_cqi/' + response.patient.id + '" class="btn btn-sm btn-primary">View CQI</a></td>'
+                    + '</tr>';
 
                 $('#content-2 tbody').prepend(rowHtml);
                 $('#rejectModal').modal('hide');

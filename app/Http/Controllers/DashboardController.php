@@ -20,11 +20,11 @@ class DashboardController extends Controller
 
         if (session()->get('user_type') == 1) {
 
-            $data['patients'] = Patients::with('patientsCQI')   // load CQI
+            $data['patients'] = Patients::with('patientsCQI')
                 ->get()
                 ->whereNotNull('first_name')
-                ->sortBy(fn($p) => $p->patientsCQI->status ?? 0)        // sort by status (0,1,2)
-                ->groupBy(fn($p) => $p->patientsCQI->status ?? 0);
+                ->sortBy(fn($p) => $p->patientsCQI ? $p->patientsCQI->status : 0)
+                ->groupBy(fn($p) => $p->patientsCQI ? $p->patientsCQI->status : 0);
 
             return view('dashboards/doctor', $data);
         } else {
@@ -122,7 +122,7 @@ class DashboardController extends Controller
         // Get all patients awaiting approval
         $patients = Patients::with('patientsCQI')
             ->get()
-            ->filter(fn($p) => ($p->patientsCQI->status ?? 0) == 0);
+            ->filter(fn($p) => $p->patientsCQI && $p->patientsCQI->status == 0);
 
         foreach ($patients as $patient) {
 
