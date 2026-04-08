@@ -709,23 +709,44 @@
             $('<input type="hidden" name="card_cvc">').val($('#modal_cvc').val()).appendTo('#cqiForm');
             $('<input type="hidden" name="payment_amount">').val($('#modal_payment_amount').val()).appendTo('#cqiForm');
 
-            // Get a fresh token immediately before submission so it doesn't expire
-            grecaptcha.ready(function() {
-                grecaptcha.execute('{{ config("services.recaptcha.site_key") }}', { action: 'submit_patient' })
-                    .then(function(token) {
-                        if ($('#recaptcha_token').length === 0) {
-                            $('<input>').attr({
-                                type: 'hidden',
-                                id: 'recaptcha_token',
-                                name: 'recaptcha_token',
-                                value: token
-                            }).appendTo('#cqiForm');
-                        } else {
-                            $('#recaptcha_token').val(token);
-                        }
-                        $('#cqiForm')[0].submit();
-                    });
-            });
+            var siteKey = '{{ config("services.recaptcha.site_key") }}';
+
+            function doSubmit() {
+                $('#cqiForm')[0].submit();
+            }
+
+            function onError() {
+                // Re-enable button so user can try again
+                $('#confirmPaymentBtn').prop('disabled', false).text("Confirm Payment");
+                $('#paymentProcessing').hide();
+                alert('Something went wrong. Please try again.');
+            }
+
+            // Only run reCAPTCHA if a site key is configured (production)
+            if (siteKey && typeof grecaptcha !== 'undefined') {
+                grecaptcha.ready(function() {
+                    grecaptcha.execute(siteKey, { action: 'submit_patient' })
+                        .then(function(token) {
+                            if ($('#recaptcha_token').length === 0) {
+                                $('<input>').attr({
+                                    type: 'hidden',
+                                    id: 'recaptcha_token',
+                                    name: 'recaptcha_token',
+                                    value: token
+                                }).appendTo('#cqiForm');
+                            } else {
+                                $('#recaptcha_token').val(token);
+                            }
+                            doSubmit();
+                        })
+                        .catch(function() {
+                            onError();
+                        });
+                });
+            } else {
+                // No reCAPTCHA key — staging/local, submit directly
+                doSubmit();
+            }
         });
     });
 </script>
