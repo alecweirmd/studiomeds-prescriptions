@@ -575,6 +575,28 @@
                 renderDropdown(matches);
             });
 
+            searchInput.addEventListener('blur', function() {
+                setTimeout(function() {
+                    const typed = searchInput.value.trim();
+                    const valid = US_STATES.find(function(s) {
+                        return s.toLowerCase() === typed.toLowerCase();
+                    });
+                    if (!valid) {
+                        searchInput.value = '';
+                        hiddenInput.value = '';
+                        searchInput.classList.add('is-invalid');
+                    } else {
+                        selectState(valid);
+                        searchInput.classList.remove('is-invalid');
+                    }
+                    dropdown.style.display = 'none';
+                }, 150);
+            });
+
+            searchInput.addEventListener('input', function() {
+                searchInput.classList.remove('is-invalid');
+            });
+
             searchInput.addEventListener('keydown', function(e) {
                 const items = dropdown.querySelectorAll('li');
                 if (e.key === 'ArrowDown') {
