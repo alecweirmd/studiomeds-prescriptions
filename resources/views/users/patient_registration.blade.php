@@ -93,17 +93,16 @@
 
                     <div class="col-md-3">
                         <label class="form-label">State</label>
-                        <input type="text" class="form-control" name="state"
-                               list="states-list"
-                               placeholder="Type a state..."
-                               value="{{ old('state') }}"
-                               autocomplete="off"
-                               required>
-                        <datalist id="states-list">
-                            @foreach($states as $state)
-                            <option value="{{ $state->full }}">{{ $state->abbreviation }}</option>
-                            @endforeach
-                        </datalist>
+                        <div style="position:relative;">
+                            <input type="text" class="form-control" id="state_search"
+                                   placeholder="Type a state..."
+                                   value="{{ old('state') }}"
+                                   autocomplete="off">
+                            <input type="hidden" name="state" id="state_value" value="{{ old('state') }}" required>
+                            <ul id="state-dropdown"
+                                style="display:none;position:absolute;z-index:9999;width:100%;max-height:220px;overflow-y:auto;list-style:none;padding:0;margin:0;border:1px solid #ced4da;border-radius:0 0 4px 4px;background:#fff;box-shadow:0 4px 8px rgba(0,0,0,.1);">
+                            </ul>
+                        </div>
                     </div>
 
                     <div class="col-md-3">
@@ -511,6 +510,95 @@
             });
         });
 
+
+        // State autocomplete
+        const US_STATES = [
+            'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut',
+            'Delaware','District of Columbia','Florida','Georgia','Hawaii','Idaho','Illinois',
+            'Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts',
+            'Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada',
+            'New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota',
+            'Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina',
+            'South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington',
+            'West Virginia','Wisconsin','Wyoming'
+        ];
+
+        (function() {
+            const searchInput = document.getElementById('state_search');
+            const hiddenInput = document.getElementById('state_value');
+            const dropdown    = document.getElementById('state-dropdown');
+            let activeIndex   = -1;
+
+            function renderDropdown(matches) {
+                dropdown.innerHTML = '';
+                activeIndex = -1;
+                if (matches.length === 0) { dropdown.style.display = 'none'; return; }
+                matches.forEach(function(state, i) {
+                    const li = document.createElement('li');
+                    li.textContent = state;
+                    li.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:14px;';
+                    li.addEventListener('mouseenter', function() { setActive(i); });
+                    li.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        selectState(state);
+                    });
+                    dropdown.appendChild(li);
+                });
+                dropdown.style.display = 'block';
+            }
+
+            function setActive(i) {
+                const items = dropdown.querySelectorAll('li');
+                items.forEach(function(el) { el.style.background = ''; el.style.color = ''; });
+                activeIndex = i;
+                if (items[i]) {
+                    items[i].style.background = '#0d6efd';
+                    items[i].style.color = '#fff';
+                    items[i].scrollIntoView({ block: 'nearest' });
+                }
+            }
+
+            function selectState(state) {
+                searchInput.value = state;
+                hiddenInput.value = state;
+                dropdown.style.display = 'none';
+                activeIndex = -1;
+            }
+
+            searchInput.addEventListener('input', function() {
+                const q = this.value.trim().toLowerCase();
+                hiddenInput.value = '';
+                if (!q) { dropdown.style.display = 'none'; return; }
+                const matches = US_STATES.filter(function(s) {
+                    return s.toLowerCase().startsWith(q);
+                });
+                renderDropdown(matches);
+            });
+
+            searchInput.addEventListener('keydown', function(e) {
+                const items = dropdown.querySelectorAll('li');
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setActive(Math.min(activeIndex + 1, items.length - 1));
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setActive(Math.max(activeIndex - 1, 0));
+                } else if (e.key === 'Enter') {
+                    if (activeIndex >= 0 && items[activeIndex]) {
+                        e.preventDefault();
+                        selectState(items[activeIndex].textContent);
+                    }
+                } else if (e.key === 'Escape') {
+                    dropdown.style.display = 'none';
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.style.display = 'none';
+                }
+            });
+        })();
 
         function anyYesSelected() {
             return $('.q-radio:checked[value="1"]').length > 0;
