@@ -170,7 +170,42 @@
                 <p><strong>12. Have you ever been told you have a condition called methemoglobinemia or a blood disorder affecting oxygen carrying capacity?</strong>
                 {{ $patient->methemoglobinemia == 1 ? 'Yes' : 'No' }}</p>
             </div>
+
+            @if($patient->patientsCQI->status == 0)
+            <div class="mt-4">
+                <a class="btn btn-success approve" data-id="{{ $patient->id }}">Approve</a>
+            </div>
+            @endif
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Approval</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to approve this patient?
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a id="confirmApprove" class="btn btn-success">Approve</a>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
+@section('script')
+<script>
+    $(document).on('click', '.approve', function(e) {
+        e.preventDefault();
+        let id = $(this).data('id');
+        $('#confirmApprove').attr('href', '/dashboard/approve_patient/' + id);
+        $('#approveModal').modal('show');
+    });
+</script>
 @endsection
