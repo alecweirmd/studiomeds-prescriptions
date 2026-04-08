@@ -396,6 +396,22 @@
     </div>
 </div>
 
+<div class="modal fade" id="medicalWarningModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Medical History Notice</h5>
+            </div>
+            <div class="modal-body text-center py-4">
+                <p class="fs-5">Given your medical history it is recommended you see an in person provider to receive a prescription for topical anesthetics.</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-danger px-5" id="medicalWarningAcknowledge">I Understand</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="paymentModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -634,8 +650,18 @@
             });
         })();
 
+        const medicalFields = ['lidocaine','bactine','broken_skin','eczema','heart_rhythm','liver_disease','seizures','pregnant','antiarrhythmic','seizure_meds','fainted','methemoglobinemia'];
+
         function anyYesSelected() {
-            return $('.q-radio:checked[value="1"]').length > 0;
+            return medicalFields.some(function(name) {
+                return $('input[name="' + name + '"]:checked').val() === '1';
+            });
+        }
+
+        function allQuestionsAnswered() {
+            return medicalFields.every(function(name) {
+                return $('input[name="' + name + '"]:checked').length > 0;
+            });
         }
 
         function calculateAge(dob) {
@@ -663,23 +689,42 @@
         $('#cqiForm').on('submit', function(e) {
             e.preventDefault();
 
-            // Remove any previous age error
+            // 1. Age check
             $('#dob-age-error').remove();
-
             const dob = $('#date_of_birth').val();
             const age = calculateAge(dob);
-
             if (age !== null && age < 18) {
                 $('#date_of_birth').after('<div id="dob-age-error" class="alert alert-danger mt-2">You must be 18 or older to submit this form.</div>');
                 $('#date_of_birth')[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
             }
 
-            if (anyYesSelected()) {
-                $('#followUpHint').slideDown();
+            // 2. All 12 medical questions must be answered
+            $('#medical-incomplete-error').remove();
+            if (!allQuestionsAnswered()) {
+                const firstUnanswered = medicalFields.find(function(name) {
+                    return $('input[name="' + name + '"]:checked').length === 0;
+                });
+                const target = $('input[name="' + firstUnanswered + '"]').closest('.mb-3, .py-2');
+                $('<div id="medical-incomplete-error" class="alert alert-danger mt-2">Please answer all medical history questions before submitting.</div>')
+                    .insertBefore(target);
+                target[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
             }
 
+            // 3. If any Yes — show medical warning modal (cannot proceed to payment)
+            if (anyYesSelected()) {
+                $('#medicalWarningModal').modal('show');
+                return;
+            }
+
+            // 4. All No — proceed to payment
             $('#paymentModal').modal('show');
+        });
+
+        // "I Understand" closes warning modal — user stays on form to review answers
+        $('#medicalWarningAcknowledge').on('click', function() {
+            $('#medicalWarningModal').modal('hide');
         });
 
 

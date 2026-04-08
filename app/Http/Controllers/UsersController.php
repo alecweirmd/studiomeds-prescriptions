@@ -213,13 +213,29 @@ class UsersController extends Controller
             'West Virginia','Wisconsin','Wyoming',
         ];
 
-        $request->validate([
+        $medicalFields = ['lidocaine','bactine','broken_skin','eczema','heart_rhythm','liver_disease','seizures','pregnant','antiarrhythmic','seizure_meds','fainted','methemoglobinemia'];
+
+        $medicalValidation = [];
+        foreach ($medicalFields as $field) {
+            $medicalValidation[$field] = 'required|in:0,1';
+        }
+
+        $request->validate(array_merge([
             'state'         => ['required', 'string', \Illuminate\Validation\Rule::in($validStates)],
             'date_of_birth' => ['required', 'date', 'before_or_equal:' . now()->subYears(18)->toDateString()],
-        ], [
-            'state.in'              => 'Please select a valid US state from the list.',
+        ], $medicalValidation), [
+            'state.in'                      => 'Please select a valid US state from the list.',
             'date_of_birth.before_or_equal' => 'You must be 18 or older to submit this form.',
         ]);
+
+        // Block submission if any medical question was answered Yes
+        foreach ($medicalFields as $field) {
+            if ((int) $request->input($field) === 1) {
+                return back()->withErrors([
+                    'medical' => 'Based on your medical history, please see an in-person provider for a prescription for topical anesthetics.',
+                ])->withInput();
+            }
+        }
 
         $patient = Patients::find($request->patient_id);
 
