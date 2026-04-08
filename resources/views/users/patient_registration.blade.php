@@ -535,50 +535,30 @@
             }
         });
 
-        // Intercept form submit → open modal
+        // Intercept form submit → validate then open payment modal
         $('#cqiForm').on('submit', function(e) {
             e.preventDefault();
 
-            grecaptcha.ready(function() {
-                grecaptcha.execute('{{ env("RECAPTCHA_SITE_KEY") }}', {
-                            action: 'submit_patient'
-                        })
-                    .then(function(token) {
+            let message = '';
 
-                        // Append token to form
-                        if ($('#recaptcha_token').length === 0) {
-                            $('<input>').attr({
-                                type: 'hidden',
-                                id: 'recaptcha_token',
-                                name: 'recaptcha_token',
-                                value: token
-                            }).appendTo('#cqiForm');
-                        } else {
-                            $('#recaptcha_token').val(token);
-                        }
+            if (anyYesSelected())
+                message += 'Patient answered "Yes" — follow up.\n';
 
-                        let message = '';
+            const dob = $('#date_of_birth').val();
+            const age = calculateAge(dob);
 
-                        if (anyYesSelected())
-                            message += 'Patient answered "Yes" — follow up.\n';
+            if (age !== null && age < 18)
+                message += 'Patient appears under 18.\n';
 
-                        const dob = $('#date_of_birth').val();
-                        const age = calculateAge(dob);
-
-                        if (age !== null && age < 18)
-                            message += 'Patient appears under 18.\n';
-
-                        if (message !== '') {
-                            alert(message);
-                        } else {
-                            $('#paymentModal').modal('show');
-                        }
-                    });
-            });
+            if (message !== '') {
+                alert(message);
+            } else {
+                $('#paymentModal').modal('show');
+            }
         });
 
 
-        // Confirm payment button
+        // Confirm payment button — generate fresh reCAPTCHA token just before submitting
         $('#confirmPaymentBtn').on('click', function() {
 
             // Disable button + show spinner
@@ -592,10 +572,23 @@
             $('<input type="hidden" name="card_cvc">').val($('#modal_cvc').val()).appendTo('#cqiForm');
             $('<input type="hidden" name="payment_amount">').val($('#modal_payment_amount').val()).appendTo('#cqiForm');
 
-            // Actually submit the form
-            setTimeout(() => {
-                $('#cqiForm')[0].submit();
-            }, 800); // slight delay for UI polish
+            // Get a fresh token immediately before submission so it doesn't expire
+            grecaptcha.ready(function() {
+                grecaptcha.execute('{{ config("services.recaptcha.site_key") }}', { action: 'submit_patient' })
+                    .then(function(token) {
+                        if ($('#recaptcha_token').length === 0) {
+                            $('<input>').attr({
+                                type: 'hidden',
+                                id: 'recaptcha_token',
+                                name: 'recaptcha_token',
+                                value: token
+                            }).appendTo('#cqiForm');
+                        } else {
+                            $('#recaptcha_token').val(token);
+                        }
+                        $('#cqiForm')[0].submit();
+                    });
+            });
         });
     });
 </script>
