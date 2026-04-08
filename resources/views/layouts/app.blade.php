@@ -113,7 +113,7 @@
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
     <script>
         $('.select2').select2({
-            theme: 'bootstrap4',
+            theme: 'bootstrap-5',
         });
     </script>
     @yield('script')
