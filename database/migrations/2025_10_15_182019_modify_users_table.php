@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        //
+        // Rename 'name' to 'first_name' only if 'name' exists and 'first_name' does not
         if (Schema::hasColumn('users', 'name') && !Schema::hasColumn('users', 'first_name')) {
             Schema::table('users', function (Blueprint $table) {
                 $table->renameColumn('name', 'first_name');
@@ -20,37 +20,59 @@ return new class extends Migration
 
         Schema::table('users', function (Blueprint $table) {
             if (!Schema::hasColumn('users', 'last_name')) {
-                $table->string('last_name')->nullable()->after('first_name');
+                $after = Schema::hasColumn('users', 'first_name') ? 'first_name' : null;
+                $col = $table->string('last_name')->nullable();
+                if ($after) $col->after($after);
             }
             if (!Schema::hasColumn('users', 'artist_name')) {
-                $table->string('artist_name')->nullable()->after('last_name');
+                $after = Schema::hasColumn('users', 'last_name') ? 'last_name' : null;
+                $col = $table->string('artist_name')->nullable();
+                if ($after) $col->after($after);
             }
             if (!Schema::hasColumn('users', 'phone_number')) {
-                $table->string('phone_number')->nullable()->after('artist_name');
+                $after = Schema::hasColumn('users', 'artist_name') ? 'artist_name' : null;
+                $col = $table->string('phone_number')->nullable();
+                if ($after) $col->after($after);
             }
             if (!Schema::hasColumn('users', 'name_of_shop')) {
-                $table->string('name_of_shop')->nullable()->after('phone_number');
+                $after = Schema::hasColumn('users', 'phone_number') ? 'phone_number' : null;
+                $col = $table->string('name_of_shop')->nullable();
+                if ($after) $col->after($after);
             }
             if (!Schema::hasColumn('users', 'street_address')) {
-                $table->string('street_address')->nullable()->after('password');
+                $after = Schema::hasColumn('users', 'password') ? 'password' : null;
+                $col = $table->string('street_address')->nullable();
+                if ($after) $col->after($after);
             }
             if (!Schema::hasColumn('users', 'city')) {
-                $table->string('city')->nullable()->after('street_address');
+                $after = Schema::hasColumn('users', 'street_address') ? 'street_address' : null;
+                $col = $table->string('city')->nullable();
+                if ($after) $col->after($after);
             }
             if (!Schema::hasColumn('users', 'state')) {
-                $table->string('state')->nullable()->after('city');
+                $after = Schema::hasColumn('users', 'city') ? 'city' : null;
+                $col = $table->string('state')->nullable();
+                if ($after) $col->after($after);
             }
             if (!Schema::hasColumn('users', 'zip')) {
-                $table->integer('zip')->nullable()->after('state');
+                $after = Schema::hasColumn('users', 'state') ? 'state' : null;
+                $col = $table->integer('zip')->nullable();
+                if ($after) $col->after($after);
             }
             if (!Schema::hasColumn('users', 'drivers_license')) {
-                $table->string('drivers_license')->nullable()->after('zip');
+                $after = Schema::hasColumn('users', 'zip') ? 'zip' : null;
+                $col = $table->string('drivers_license')->nullable();
+                if ($after) $col->after($after);
             }
             if (!Schema::hasColumn('users', 'selfie_photo')) {
-                $table->string('selfie_photo')->nullable()->after('drivers_license');
+                $after = Schema::hasColumn('users', 'drivers_license') ? 'drivers_license' : null;
+                $col = $table->string('selfie_photo')->nullable();
+                if ($after) $col->after($after);
             }
             if (!Schema::hasColumn('users', 'user_type')) {
-                $table->integer('user_type')->nullable()->after('patient_photo');
+                $after = Schema::hasColumn('users', 'selfie_photo') ? 'selfie_photo' : null;
+                $col = $table->integer('user_type')->nullable();
+                if ($after) $col->after($after);
             }
         });
     }
@@ -60,20 +82,24 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        // Rename 'first_name' back to 'name' only if 'first_name' exists and 'name' does not
+        if (Schema::hasColumn('users', 'first_name') && !Schema::hasColumn('users', 'name')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->renameColumn('first_name', 'name');
+            });
+        }
+
         Schema::table('users', function (Blueprint $table) {
-            $table->renameColumn('first_name', 'name');
-            $table->dropColumn('last_name');
-            $table->dropColumn('artist_name');
-            $table->dropColumn('phone_number');
-            $table->dropColumn('name_of_shop');
-            $table->dropColumn('street_address');
-            $table->dropColumn('city');
-            $table->dropColumn('state');
-            $table->dropColumn('zip');
-            $table->dropColumn('drivers_license');
-            $table->dropColumn('selfie_photo');
-            $table->dropColumn('user_type');
+            $columns = [
+                'last_name', 'artist_name', 'phone_number', 'name_of_shop',
+                'street_address', 'city', 'state', 'zip',
+                'drivers_license', 'selfie_photo', 'user_type',
+            ];
+            foreach ($columns as $column) {
+                if (Schema::hasColumn('users', $column)) {
+                    $table->dropColumn($column);
+                }
+            }
         });
     }
 };
