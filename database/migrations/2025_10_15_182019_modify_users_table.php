@@ -12,8 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         //
+        if (Schema::hasColumn('users', 'name') && !Schema::hasColumn('users', 'first_name')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->renameColumn('name', 'first_name');
+            });
+        }
+
         Schema::table('users', function (Blueprint $table) {
-            $table->renameColumn('name', 'first_name');
             $table->string('last_name')->nullable()->after('first_name');
             $table->string('artist_name')->nullable()->after('last_name');
             $table->string('phone_number')->nullable()->after('artist_name');
