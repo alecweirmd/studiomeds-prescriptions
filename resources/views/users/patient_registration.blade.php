@@ -107,20 +107,24 @@
 
                     <div class="col-md-3">
                         <label class="form-label">ZIP</label>
-                        <input type="text" class="form-control" name="zip" value="{{ old('zip') }}" required>
+                        <input type="text" class="form-control" name="zip" inputmode="numeric" value="{{ old('zip') }}" required>
                     </div>
                 </div>
 
                 {{-- FILE UPLOADS --}}
                 <div class="row g-3 p-2">
-                    <div class="col">
+                    <div class="col-md-6">
                         <label class="form-label">Driver’s License</label>
-                        <input type="file" name="drivers_license_image" class="form-control" required>
+                        <small class="text-muted d-block mb-1">Take a photo or upload from your gallery.</small>
+                        <input type="file" name="drivers_license_image" class="form-control"
+                               accept="image/*" capture="environment" required>
                     </div>
 
-                    <div class="col">
+                    <div class="col-md-6">
                         <label class="form-label">Selfie</label>
-                        <input type="file" name="selfie_image" class="form-control" required>
+                        <small class="text-muted d-block mb-1">Take a selfie or upload a photo of yourself.</small>
+                        <input type="file" name="selfie_image" class="form-control"
+                               accept="image/*" capture="user" required>
                     </div>
                 </div>
 
@@ -393,7 +397,7 @@
 </div>
 
 <div class="modal fade" id="paymentModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
 
             <div class="modal-header">
@@ -406,26 +410,28 @@
 
                 <div class="row g-3">
 
-                    <div class="col-md-6">
+                    <div class="col-12 col-md-6">
                         <label>Card Number</label>
-                        <input type="text" id="modal_card_number" name="modal_card_number" class="form-control" value="{{ old('modal_card_number') }}">
+                        <input type="text" id="modal_card_number" name="modal_card_number" class="form-control"
+                               inputmode="numeric" placeholder="Card number" value="{{ old('modal_card_number') }}">
                     </div>
 
-                    <div class="col-md-2">
+                    <div class="col-4 col-md-2">
                         <label>Exp (MM)</label>
                         <input type="text" id="modal_exp_month" name="modal_exp_month" class="form-control"
                                maxlength="2" placeholder="MM" inputmode="numeric" value="{{ old('modal_exp_month') }}">
                     </div>
 
-                    <div class="col-md-2">
+                    <div class="col-4 col-md-2">
                         <label>Exp (YY)</label>
                         <input type="text" id="modal_exp_year" name="modal_exp_year" class="form-control"
                                maxlength="2" placeholder="YY" inputmode="numeric" value="{{ old('modal_exp_year') }}">
                     </div>
 
-                    <div class="col-md-2">
+                    <div class="col-4 col-md-2">
                         <label>CVC</label>
-                        <input type="text" id="modal_cvc" name="modal_cvc" class="form-control" value="{{ old('modal_cvc') }}">
+                        <input type="text" id="modal_cvc" name="modal_cvc" class="form-control"
+                               inputmode="numeric" maxlength="4" placeholder="CVC" value="{{ old('modal_cvc') }}">
                     </div>
 
                     <input type="hidden" id="modal_payment_amount" value="35.00">
@@ -544,6 +550,10 @@
                         e.preventDefault();
                         selectState(state);
                     });
+                    li.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        selectState(state);
+                    }, { passive: false });
                     dropdown.appendChild(li);
                 });
                 dropdown.style.display = 'block';
