@@ -175,16 +175,29 @@ class AuthorizeNetService {
 
     public function chargeOneTime($number, $expMonth, $expYear, $cvc, $amount) {
         try {
+            if (empty($this->loginId) || empty($this->transactionKey)) {
+                Log::error("AuthorizeNet chargeOneTime: credentials not configured.");
+                return ['success' => false, 'message' => 'Payment gateway is not configured. Please contact support.'];
+            }
+
             $merchantAuthentication = new AnetAPI\MerchantAuthenticationType();
             $merchantAuthentication->setName($this->loginId);
             $merchantAuthentication->setTransactionKey($this->transactionKey);
 
             $expMonth = str_pad($expMonth, 2, '0', STR_PAD_LEFT);
             $expYear  = strlen($expYear) === 2 ? '20' . $expYear : $expYear;
+            $expirationDate = $expYear . '-' . $expMonth;
+
+            Log::info("AuthorizeNet chargeOneTime request", [
+                'card_last4'      => substr($number, -4),
+                'expiration_date' => $expirationDate,
+                'amount'          => $amount,
+                'environment'     => $this->environment,
+            ]);
 
             $creditCard = new AnetAPI\CreditCardType();
             $creditCard->setCardNumber($number);
-            $creditCard->setExpirationDate($expYear . "-" . $expMonth);
+            $creditCard->setExpirationDate($expirationDate);
             $creditCard->setCardCode($cvc);
 
             $paymentType = new AnetAPI\PaymentType();
@@ -219,13 +232,20 @@ class AuthorizeNetService {
             // Extract the clearest available error message
             $errors = $transactionResponse?->getErrors();
             if ($errors && count($errors) > 0) {
-                $errorMsg = $errors[0]->getErrorText();
+                $errorCode = $errors[0]->getErrorCode();
+                $errorMsg  = $errors[0]->getErrorText();
             } else {
-                $messages = $response?->getMessages()?->getMessage();
-                $errorMsg = ($messages && count($messages) > 0)
-                    ? $messages[0]->getText()
-                    : 'No response from payment gateway.';
+                $messages  = $response?->getMessages()?->getMessage();
+                $errorCode = ($messages && count($messages) > 0) ? $messages[0]->getCode() : 'unknown';
+                $errorMsg  = ($messages && count($messages) > 0) ? $messages[0]->getText() : 'No response from payment gateway.';
             }
+
+            Log::error("AuthorizeNet chargeOneTime failed", [
+                'error_code'      => $errorCode,
+                'error_message'   => $errorMsg,
+                'response_code'   => $transactionResponse?->getResponseCode(),
+                'result_code'     => $response?->getMessages()?->getResultCode(),
+            ]);
 
             return [
                 'success' => false,
