@@ -8,71 +8,74 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * Fresh base table columns (from 0001_01_01_000000_create_users_table.php):
+     *   id, first_name, email, email_verified_at, password, remember_token, created_at, updated_at
+     *
+     * This migration adds the remaining user profile columns and handles the
+     * legacy case where the base table still had 'name' instead of 'first_name'.
+     *
+     * Every operation is guarded so the migration is safe on any state of the DB.
      */
     public function up(): void
     {
-        // Rename 'name' to 'first_name' only if 'name' exists and 'first_name' does not
+        // Rename 'name' → 'first_name' only on old databases that haven't been updated yet.
+        // On a fresh install the base migration already creates 'first_name', so this is skipped.
         if (Schema::hasColumn('users', 'name') && !Schema::hasColumn('users', 'first_name')) {
             Schema::table('users', function (Blueprint $table) {
                 $table->renameColumn('name', 'first_name');
             });
         }
 
-        Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'last_name')) {
-                $after = Schema::hasColumn('users', 'first_name') ? 'first_name' : null;
-                $col = $table->string('last_name')->nullable();
-                if ($after) $col->after($after);
-            }
-            if (!Schema::hasColumn('users', 'artist_name')) {
-                $after = Schema::hasColumn('users', 'last_name') ? 'last_name' : null;
-                $col = $table->string('artist_name')->nullable();
-                if ($after) $col->after($after);
-            }
-            if (!Schema::hasColumn('users', 'phone_number')) {
-                $after = Schema::hasColumn('users', 'artist_name') ? 'artist_name' : null;
-                $col = $table->string('phone_number')->nullable();
-                if ($after) $col->after($after);
-            }
-            if (!Schema::hasColumn('users', 'name_of_shop')) {
-                $after = Schema::hasColumn('users', 'phone_number') ? 'phone_number' : null;
-                $col = $table->string('name_of_shop')->nullable();
-                if ($after) $col->after($after);
-            }
-            if (!Schema::hasColumn('users', 'street_address')) {
-                $after = Schema::hasColumn('users', 'password') ? 'password' : null;
-                $col = $table->string('street_address')->nullable();
-                if ($after) $col->after($after);
-            }
-            if (!Schema::hasColumn('users', 'city')) {
-                $after = Schema::hasColumn('users', 'street_address') ? 'street_address' : null;
-                $col = $table->string('city')->nullable();
-                if ($after) $col->after($after);
-            }
-            if (!Schema::hasColumn('users', 'state')) {
-                $after = Schema::hasColumn('users', 'city') ? 'city' : null;
-                $col = $table->string('state')->nullable();
-                if ($after) $col->after($after);
-            }
-            if (!Schema::hasColumn('users', 'zip')) {
-                $after = Schema::hasColumn('users', 'state') ? 'state' : null;
-                $col = $table->integer('zip')->nullable();
-                if ($after) $col->after($after);
-            }
-            if (!Schema::hasColumn('users', 'drivers_license')) {
-                $after = Schema::hasColumn('users', 'zip') ? 'zip' : null;
-                $col = $table->string('drivers_license')->nullable();
-                if ($after) $col->after($after);
-            }
-            if (!Schema::hasColumn('users', 'selfie_photo')) {
-                $after = Schema::hasColumn('users', 'drivers_license') ? 'drivers_license' : null;
-                $col = $table->string('selfie_photo')->nullable();
-                if ($after) $col->after($after);
-            }
-            if (!Schema::hasColumn('users', 'user_type')) {
-                $after = Schema::hasColumn('users', 'selfie_photo') ? 'selfie_photo' : null;
-                $col = $table->integer('user_type')->nullable();
-                if ($after) $col->after($after);
+        // Define every column we want to add: name → desired 'after' anchor.
+        // Anchors may be base-table columns OR columns added earlier in this same list —
+        // MySQL processes ADD COLUMN ... AFTER ... sequentially within one ALTER TABLE,
+        // so referencing a column that is being added in the same statement is safe.
+        $columns = [
+            'last_name'      => ['type' => 'string',  'after' => 'first_name'],
+            'artist_name'    => ['type' => 'string',  'after' => 'last_name'],
+            'phone_number'   => ['type' => 'string',  'after' => 'artist_name'],
+            'name_of_shop'   => ['type' => 'string',  'after' => 'phone_number'],
+            'street_address' => ['type' => 'string',  'after' => 'password'],
+            'city'           => ['type' => 'string',  'after' => 'street_address'],
+            'state'          => ['type' => 'string',  'after' => 'city'],
+            'zip'            => ['type' => 'integer', 'after' => 'state'],
+            'drivers_license'=> ['type' => 'string',  'after' => 'zip'],
+            'selfie_photo'   => ['type' => 'string',  'after' => 'drivers_license'],
+            'user_type'      => ['type' => 'integer', 'after' => 'selfie_photo'],
+        ];
+
+        // Build the set of columns that will exist after this migration:
+        // either already in the DB or being added right now.
+        $willExist = array_filter(
+            array_keys($columns),
+            fn($col) => Schema::hasColumn('users', $col)
+        );
+        // Also include all base-table columns as valid anchors.
+        $baseColumns = ['id', 'first_name', 'email', 'email_verified_at', 'password', 'remember_token', 'created_at', 'updated_at'];
+        $validAnchors = array_merge($baseColumns, array_values($willExist));
+
+        Schema::table('users', function (Blueprint $table) use ($columns, &$validAnchors) {
+            foreach ($columns as $col => $def) {
+                if (Schema::hasColumn('users', $col)) {
+                    // Column already exists — still a valid anchor for subsequent columns.
+                    if (!in_array($col, $validAnchors)) {
+                        $validAnchors[] = $col;
+                    }
+                    continue;
+                }
+
+                // Add the column, using 'after' only when the anchor is guaranteed to exist.
+                $colDef = $def['type'] === 'integer'
+                    ? $table->integer($col)->nullable()
+                    : $table->string($col)->nullable();
+
+                if (in_array($def['after'], $validAnchors)) {
+                    $colDef->after($def['after']);
+                }
+
+                // This column is now being added — treat it as a valid anchor for subsequent ones.
+                $validAnchors[] = $col;
             }
         });
     }
@@ -82,22 +85,23 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Rename 'first_name' back to 'name' only if 'first_name' exists and 'name' does not
+        // Rename 'first_name' back to 'name' only if it was renamed by this migration.
         if (Schema::hasColumn('users', 'first_name') && !Schema::hasColumn('users', 'name')) {
             Schema::table('users', function (Blueprint $table) {
                 $table->renameColumn('first_name', 'name');
             });
         }
 
-        Schema::table('users', function (Blueprint $table) {
-            $columns = [
-                'last_name', 'artist_name', 'phone_number', 'name_of_shop',
-                'street_address', 'city', 'state', 'zip',
-                'drivers_license', 'selfie_photo', 'user_type',
-            ];
-            foreach ($columns as $column) {
-                if (Schema::hasColumn('users', $column)) {
-                    $table->dropColumn($column);
+        $added = [
+            'last_name', 'artist_name', 'phone_number', 'name_of_shop',
+            'street_address', 'city', 'state', 'zip',
+            'drivers_license', 'selfie_photo', 'user_type',
+        ];
+
+        Schema::table('users', function (Blueprint $table) use ($added) {
+            foreach ($added as $col) {
+                if (Schema::hasColumn('users', $col)) {
+                    $table->dropColumn($col);
                 }
             }
         });
