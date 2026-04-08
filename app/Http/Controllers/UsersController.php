@@ -214,9 +214,11 @@ class UsersController extends Controller
         ];
 
         $request->validate([
-            'state' => ['required', 'string', \Illuminate\Validation\Rule::in($validStates)],
+            'state'         => ['required', 'string', \Illuminate\Validation\Rule::in($validStates)],
+            'date_of_birth' => ['required', 'date', 'before_or_equal:' . now()->subYears(18)->toDateString()],
         ], [
-            'state.in' => 'Please select a valid US state from the list.',
+            'state.in'              => 'Please select a valid US state from the list.',
+            'date_of_birth.before_or_equal' => 'You must be 18 or older to submit this form.',
         ]);
 
         $patient = Patients::find($request->patient_id);

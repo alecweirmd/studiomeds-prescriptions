@@ -663,22 +663,23 @@
         $('#cqiForm').on('submit', function(e) {
             e.preventDefault();
 
-            let message = '';
-
-            if (anyYesSelected())
-                message += 'Patient answered "Yes" — follow up.\n';
+            // Remove any previous age error
+            $('#dob-age-error').remove();
 
             const dob = $('#date_of_birth').val();
             const age = calculateAge(dob);
 
-            if (age !== null && age < 18)
-                message += 'Patient appears under 18.\n';
-
-            if (message !== '') {
-                alert(message);
-            } else {
-                $('#paymentModal').modal('show');
+            if (age !== null && age < 18) {
+                $('#date_of_birth').after('<div id="dob-age-error" class="alert alert-danger mt-2">You must be 18 or older to submit this form.</div>');
+                $('#date_of_birth')[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
             }
+
+            if (anyYesSelected()) {
+                $('#followUpHint').slideDown();
+            }
+
+            $('#paymentModal').modal('show');
         });
 
 
