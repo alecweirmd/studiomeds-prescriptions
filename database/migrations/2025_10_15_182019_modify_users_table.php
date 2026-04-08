@@ -19,17 +19,39 @@ return new class extends Migration
         }
 
         Schema::table('users', function (Blueprint $table) {
-            $table->string('last_name')->nullable()->after('first_name');
-            $table->string('artist_name')->nullable()->after('last_name');
-            $table->string('phone_number')->nullable()->after('artist_name');
-            $table->string('name_of_shop')->nullable()->after('phone_number');
-            $table->string('street_address')->nullable()->after('password');
-            $table->string('city')->nullable()->after('street_address');
-            $table->string('state')->nullable()->after('city');
-            $table->integer('zip')->nullable()->after('state');
-            $table->string('drivers_license')->nullable()->after('zip');
-            $table->string('selfie_photo')->nullable()->after('drivers_license');
-            $table->integer('user_type')->nullable()->after('patient_photo');
+            if (!Schema::hasColumn('users', 'last_name')) {
+                $table->string('last_name')->nullable()->after('first_name');
+            }
+            if (!Schema::hasColumn('users', 'artist_name')) {
+                $table->string('artist_name')->nullable()->after('last_name');
+            }
+            if (!Schema::hasColumn('users', 'phone_number')) {
+                $table->string('phone_number')->nullable()->after('artist_name');
+            }
+            if (!Schema::hasColumn('users', 'name_of_shop')) {
+                $table->string('name_of_shop')->nullable()->after('phone_number');
+            }
+            if (!Schema::hasColumn('users', 'street_address')) {
+                $table->string('street_address')->nullable()->after('password');
+            }
+            if (!Schema::hasColumn('users', 'city')) {
+                $table->string('city')->nullable()->after('street_address');
+            }
+            if (!Schema::hasColumn('users', 'state')) {
+                $table->string('state')->nullable()->after('city');
+            }
+            if (!Schema::hasColumn('users', 'zip')) {
+                $table->integer('zip')->nullable()->after('state');
+            }
+            if (!Schema::hasColumn('users', 'drivers_license')) {
+                $table->string('drivers_license')->nullable()->after('zip');
+            }
+            if (!Schema::hasColumn('users', 'selfie_photo')) {
+                $table->string('selfie_photo')->nullable()->after('drivers_license');
+            }
+            if (!Schema::hasColumn('users', 'user_type')) {
+                $table->integer('user_type')->nullable()->after('patient_photo');
+            }
         });
     }
 
