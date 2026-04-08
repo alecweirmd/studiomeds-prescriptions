@@ -634,54 +634,6 @@
             });
         })();
 
-        // localStorage save/restore for personal info fields
-        (function() {
-            var STORAGE_KEY = 'cqi_personal_info';
-            var fields = ['first_name', 'last_name', 'email', 'date_of_birth', 'street_address', 'city', 'zip'];
-
-            // Restore saved values on page load (only if field is currently empty)
-            try {
-                var saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-                fields.forEach(function(name) {
-                    if (saved[name]) {
-                        var el = document.querySelector('[name="' + name + '"]');
-                        if (el && !el.value) {
-                            el.value = saved[name];
-                        }
-                    }
-                });
-                // Restore state separately (custom widget)
-                if (saved.state) {
-                    var stateSearch = document.getElementById('state_search');
-                    var stateValue  = document.getElementById('state_value');
-                    if (stateSearch && !stateSearch.value) {
-                        stateSearch.value = saved.state;
-                        stateValue.value  = saved.state;
-                    }
-                }
-            } catch(e) {}
-
-            // Save values to localStorage whenever a field changes
-            function saveFields() {
-                try {
-                    var data = {};
-                    fields.forEach(function(name) {
-                        var el = document.querySelector('[name="' + name + '"]');
-                        if (el) data[name] = el.value;
-                    });
-                    var stateValue = document.getElementById('state_value');
-                    if (stateValue) data.state = stateValue.value;
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-                } catch(e) {}
-            }
-
-            fields.forEach(function(name) {
-                var el = document.querySelector('[name="' + name + '"]');
-                if (el) el.addEventListener('change', saveFields);
-            });
-            document.getElementById('state_search').addEventListener('change', saveFields);
-        })();
-
         function anyYesSelected() {
             return $('.q-radio:checked[value="1"]').length > 0;
         }
