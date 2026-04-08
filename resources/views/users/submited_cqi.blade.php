@@ -165,7 +165,7 @@
                 {{ $patient->methemoglobinemia == 1 ? 'Yes' : 'No' }}</p>
             </div>
 
-            @if($patient->patientsCQI->status == 0)
+            @if($patient->patientsCQI && $patient->patientsCQI->status == 0)
             <div class="mt-4">
                 <a class="btn btn-success approve" data-id="{{ $patient->id }}">Approve</a>
             </div>
