@@ -6,7 +6,7 @@
         <h3 class="mb-0">Topical Anesthetic / CQI Screening</h3>
     </div>
 
-    <form method="post" id="cqiForm" enctype="multipart/form-data" action="{{ url('users/store_patient') }}" autocomplete="off">
+    <form method="post" id="cqiForm" enctype="multipart/form-data" action="{{ url('users/store_patient') }}">
         <input type="hidden" name="patient_id" id="patient_id" value="{{ old('patient_id') }}">
         <input type="hidden" name="user_ip" id="user_ip" value="{{ old('user_ip') }}">
         @csrf
@@ -58,22 +58,22 @@
 
                     <div class="col-md-3">
                         <label class="form-label">First Name</label>
-                        <input type="text" class="form-control" name="first_name" value="{{ old('first_name') }}" required>
+                        <input type="text" class="form-control" name="first_name" value="{{ old('first_name') }}" autocomplete="given-name" required>
                     </div>
 
                     <div class="col-md-3">
                         <label class="form-label">Last Name</label>
-                        <input type="text" class="form-control" name="last_name" value="{{ old('last_name') }}" required>
+                        <input type="text" class="form-control" name="last_name" value="{{ old('last_name') }}" autocomplete="family-name" required>
                     </div>
 
                     <div class="col-md-3">
                         <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" value="{{ old('email') }}" required>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ old('email') }}" autocomplete="email" required>
                     </div>
 
                     <div class="col-md-3">
                         <label class="form-label">Date of Birth</label>
-                        <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" value="{{ old('date_of_birth') }}" required>
+                        <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" value="{{ old('date_of_birth') }}" autocomplete="bday" required>
                     </div>
                 </div>
 
@@ -83,12 +83,12 @@
 
                     <div class="col-md-3">
                         <label class="form-label">Street Address</label>
-                        <input type="text" class="form-control" name="street_address" value="{{ old('street_address') }}" required>
+                        <input type="text" class="form-control" name="street_address" value="{{ old('street_address') }}" autocomplete="street-address" required>
                     </div>
 
                     <div class="col-md-3">
                         <label class="form-label">City</label>
-                        <input type="text" class="form-control" name="city" value="{{ old('city') }}" required>
+                        <input type="text" class="form-control" name="city" value="{{ old('city') }}" autocomplete="address-level2" required>
                     </div>
 
                     <div class="col-md-3">
@@ -107,7 +107,7 @@
 
                     <div class="col-md-3">
                         <label class="form-label">ZIP</label>
-                        <input type="text" class="form-control" name="zip" inputmode="numeric" value="{{ old('zip') }}" required>
+                        <input type="text" class="form-control" name="zip" inputmode="numeric" value="{{ old('zip') }}" autocomplete="postal-code" required>
                     </div>
                 </div>
 
@@ -632,6 +632,54 @@
                     dropdown.style.display = 'none';
                 }
             });
+        })();
+
+        // localStorage save/restore for personal info fields
+        (function() {
+            var STORAGE_KEY = 'cqi_personal_info';
+            var fields = ['first_name', 'last_name', 'email', 'date_of_birth', 'street_address', 'city', 'zip'];
+
+            // Restore saved values on page load (only if field is currently empty)
+            try {
+                var saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+                fields.forEach(function(name) {
+                    if (saved[name]) {
+                        var el = document.querySelector('[name="' + name + '"]');
+                        if (el && !el.value) {
+                            el.value = saved[name];
+                        }
+                    }
+                });
+                // Restore state separately (custom widget)
+                if (saved.state) {
+                    var stateSearch = document.getElementById('state_search');
+                    var stateValue  = document.getElementById('state_value');
+                    if (stateSearch && !stateSearch.value) {
+                        stateSearch.value = saved.state;
+                        stateValue.value  = saved.state;
+                    }
+                }
+            } catch(e) {}
+
+            // Save values to localStorage whenever a field changes
+            function saveFields() {
+                try {
+                    var data = {};
+                    fields.forEach(function(name) {
+                        var el = document.querySelector('[name="' + name + '"]');
+                        if (el) data[name] = el.value;
+                    });
+                    var stateValue = document.getElementById('state_value');
+                    if (stateValue) data.state = stateValue.value;
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                } catch(e) {}
+            }
+
+            fields.forEach(function(name) {
+                var el = document.querySelector('[name="' + name + '"]');
+                if (el) el.addEventListener('change', saveFields);
+            });
+            document.getElementById('state_search').addEventListener('change', saveFields);
         })();
 
         function anyYesSelected() {
