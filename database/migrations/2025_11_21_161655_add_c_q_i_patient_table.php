@@ -14,7 +14,7 @@ return new class extends Migration
         //
         Schema::create('patients_cqi', function (Blueprint $table) {
             $table->id();
-            $table->integer('artist_id');
+            $table->integer('artist_id')->nullable();
             $table->integer('status');
             $table->integer('patient_id');
             $table->integer('lidocaine');
