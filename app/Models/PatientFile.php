@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Patients;
 
 class PatientFile extends Model
 {
@@ -16,9 +17,9 @@ class PatientFile extends Model
     'file_path'
 ];
 	
-	public function client()
+    public function patient()
     {
-        return $this->belongsTo(Client::class, 'patient_id');
+        return $this->belongsTo(Patients::class, 'patient_id');
     }
 	
 	

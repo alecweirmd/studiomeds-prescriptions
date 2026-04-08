@@ -79,7 +79,7 @@
                                         <td>{{ $statusLabels[$p->patientsCQI->status] }}</td>
                                         <td>{{ $p->created_at->format('m/d/Y') }}</td>
                                         <td>
-                                            <a href="{{ url('/users/submitted_cqi/'); }}/{{$p->id}}" class="btn btn-sm btn-primary">
+                                            <a href="{{ url('/users/submitted_cqi/' . $p->id) }}" class="btn btn-sm btn-primary">
                                                 View CQI
                                             </a>
                                             @if($p->patientsCQI->status == 0)

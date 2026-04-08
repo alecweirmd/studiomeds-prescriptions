@@ -225,6 +225,19 @@ class UsersController extends Controller
             return back()->withErrors(['patient' => 'Something went wrong.  Please refresh the page and try again.'])->withInput();
         }
 
+        $request->validate([
+            'card_number'    => ['required', 'regex:/^\d{13,19}$/'],
+            'card_exp_month' => 'required|digits:2',
+            'card_exp_year'  => 'required|digits:2',
+            'card_cvc'       => ['required', 'regex:/^\d{3,4}$/'],
+            'payment_amount' => 'required|numeric|min:0.01',
+        ], [
+            'card_number.regex'    => 'Please enter a valid card number.',
+            'card_exp_month.digits'=> 'Expiration month must be 2 digits.',
+            'card_exp_year.digits' => 'Expiration year must be 2 digits.',
+            'card_cvc.regex'       => 'Please enter a valid CVC.',
+        ]);
+
         $paymentSuccess = app(\App\Services\AuthorizeNetService::class)
             ->chargeOneTime(
                 $request->card_number,
@@ -240,21 +253,6 @@ class UsersController extends Controller
                 ->withErrors(['payment' => 'Payment failed: ' . $paymentSuccess['message']])
                 ->withInput();
         } else {
-
-            /*
-            $patient = new Patients();
-            $patient->first_name = $request->first_name;
-            $patient->last_name = $request->last_name;
-            $patient->date_of_birth = $request->date_of_birth;
-            $patient->email = $request->email;
-            $patient->street_address = $request->street_address;
-            $patient->artist_id = $request->artist_id ?? NULL;
-            $patient->artist_name = $request->artist_name ?? NULL;
-            $patient->name_of_shop = $request->name_of_shop ?? NULL;
-            $patient->city = $request->city;
-            $patient->state = $request->state;
-            $patient->zip = $request->zip;
-            */
 
             $patient->first_name = $request->first_name;
             $patient->last_name = $request->last_name;
@@ -311,7 +309,10 @@ class UsersController extends Controller
 
             // send
             Mail::raw($emailmessage, function ($m) {
-                $m->to('alecweirmd@gmail.com')->bcc('kbrewster@samsa.com')->from('noreply@studiomeds.com')->subject('New Patient Submission');
+                $m->to(config('services.admin.notification_email'))
+                  ->bcc(config('services.admin.bcc_email'))
+                  ->from(config('services.admin.from_email'))
+                  ->subject('New Patient Submission');
             });
             return redirect('users/thank_you/');
         }

@@ -86,7 +86,7 @@
 
             @if(Session::has('message'))
             <div class="container-fluid message">
-                <div class="text-center alert @if (Session::has('type')) alert-{!! session('type') !!} @elseif(isset($type) && $type != '')alert-{{ $type }} @else alert-secondary @endif">{!! session('message') !!}</div>
+                <div class="text-center alert @if (Session::has('type')) alert-{{ session('type') }} @elseif(isset($type) && $type != '')alert-{{ $type }} @else alert-secondary @endif">{{ session('message') }}</div>
             </div>
             @elseif(isset($message) && $message != '')
             <div class="container-fluid message">

@@ -30,6 +30,11 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'admin' => [
+        'notification_email' => env('ADMIN_NOTIFICATION_EMAIL', 'alecweirmd@gmail.com'),
+        'bcc_email'          => env('ADMIN_BCC_EMAIL', 'kbrewster@samsa.com'),
+        'from_email'         => env('ADMIN_FROM_EMAIL', 'noreply@studiomeds.com'),
+    ],
     'recaptcha' => [
         'site_key'        => env('RECAPTCHA_SITE_KEY'),
         'secret_key'      => env('RECAPTCHA_SECRET_KEY'),

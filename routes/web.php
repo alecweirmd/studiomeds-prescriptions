@@ -29,8 +29,6 @@ Route::post('users/store_artist', 'App\Http\Controllers\UsersController@store_ar
 Route::get('users/thank_you', 'App\Http\Controllers\UsersController@thank_you');
 Route::get('users/client_form/{uuid?}', 'App\Http\Controllers\UsersController@client_form');
 Route::post('users/store_patient', 'App\Http\Controllers\UsersController@store_patient');
-Route::post('/payment/token', 'App\Http\Controllers\UsersController@createToken');
-Route::post('/payment/callback', 'App\Http\Controllers\UsersController@callback'); 
-Route::get('/payment/relay', 'App\Http\Controllers\UsersController@relayResponse');
+Route::post('/payment/callback', 'App\Http\Controllers\UsersController@callback');
 
 Route::get('/ajaxStartUser/', 'App\Http\Controllers\UsersController@ajaxStartUser');

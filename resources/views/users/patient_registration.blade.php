@@ -413,12 +413,14 @@
 
                     <div class="col-md-2">
                         <label>Exp (MM)</label>
-                        <input type="text" id="modal_exp_month" name="modal_exp_month" class="form-control" value="{{ old('modal_exp_month') }}">
+                        <input type="text" id="modal_exp_month" name="modal_exp_month" class="form-control"
+                               maxlength="2" placeholder="MM" inputmode="numeric" value="{{ old('modal_exp_month') }}">
                     </div>
 
                     <div class="col-md-2">
-                        <label>Exp (YYYY)</label>
-                        <input type="text" id="modal_exp_year" name="modal_exp_year" class="form-control" value="{{ old('modal_exp_year') }}">
+                        <label>Exp (YY)</label>
+                        <input type="text" id="modal_exp_year" name="modal_exp_year" class="form-control"
+                               maxlength="2" placeholder="YY" inputmode="numeric" value="{{ old('modal_exp_year') }}">
                     </div>
 
                     <div class="col-md-2">
@@ -669,6 +671,19 @@
             }
         });
 
+
+        // Expiration month: digits only, auto-jump to year after 2 digits
+        $('#modal_exp_month').on('input', function() {
+            this.value = this.value.replace(/\D/g, '').slice(0, 2);
+            if (this.value.length === 2) {
+                $('#modal_exp_year').focus();
+            }
+        });
+
+        // Expiration year: digits only, max 2
+        $('#modal_exp_year').on('input', function() {
+            this.value = this.value.replace(/\D/g, '').slice(0, 2);
+        });
 
         // Confirm payment button — generate fresh reCAPTCHA token just before submitting
         $('#confirmPaymentBtn').on('click', function() {
