@@ -179,6 +179,9 @@ class AuthorizeNetService {
             $merchantAuthentication->setName($this->loginId);
             $merchantAuthentication->setTransactionKey($this->transactionKey);
 
+            $expMonth = str_pad($expMonth, 2, '0', STR_PAD_LEFT);
+            $expYear  = strlen($expYear) === 2 ? '20' . $expYear : $expYear;
+
             $creditCard = new AnetAPI\CreditCardType();
             $creditCard->setCardNumber($number);
             $creditCard->setExpirationDate($expYear . "-" . $expMonth);
