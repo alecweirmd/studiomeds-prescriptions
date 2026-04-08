@@ -171,33 +171,35 @@ class UsersController extends Controller
     public function store_patient(Request $request)
     {
 
-        $recaptchaToken = $request->input('recaptcha_token');
+        if (app()->environment('production')) {
+            $recaptchaToken = $request->input('recaptcha_token');
 
-        if (!$recaptchaToken) {
-            return back()->withErrors([
-                'captcha' => 'Captcha verification failed.'
-            ])->withInput();
-        }
+            if (!$recaptchaToken) {
+                return back()->withErrors([
+                    'captcha' => 'Captcha verification failed.'
+                ])->withInput();
+            }
 
-        $response = Http::asForm()->post(
-            'https://www.google.com/recaptcha/api/siteverify',
-            [
-                'secret'   => config('services.recaptcha.secret_key'),
-                'response' => $recaptchaToken,
-                'remoteip' => $request->ip(),
-            ]
-        );
+            $response = Http::asForm()->post(
+                'https://www.google.com/recaptcha/api/siteverify',
+                [
+                    'secret'   => config('services.recaptcha.secret_key'),
+                    'response' => $recaptchaToken,
+                    'remoteip' => $request->ip(),
+                ]
+            );
 
-        $captchaData = $response->json();
+            $captchaData = $response->json();
 
-        if (
-            !$captchaData['success'] ||
-            $captchaData['score'] < config('services.recaptcha.score_threshold') ||
-            $captchaData['action'] !== 'submit_patient'
-        ) {
-            return back()->withErrors([
-                'captcha' => 'Suspicious activity detected. Please try again.'
-            ])->withInput();
+            if (
+                !$captchaData['success'] ||
+                $captchaData['score'] < config('services.recaptcha.score_threshold') ||
+                $captchaData['action'] !== 'submit_patient'
+            ) {
+                return back()->withErrors([
+                    'captcha' => 'Suspicious activity detected. Please try again.'
+                ])->withInput();
+            }
         }
 
         $validStates = [
