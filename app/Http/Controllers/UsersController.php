@@ -293,6 +293,7 @@ class UsersController extends Controller
             $answers = new PatientsCQI();
             $answers->status = 0; //not approved
             $answers->patient_id = $patient->id;
+            $answers->artist_id = $request->artist_id ?? null;
             $answers->lidocaine = $request->lidocaine;
             $answers->bactine = $request->bactine;
             $answers->broken_skin = $request->broken_skin;
