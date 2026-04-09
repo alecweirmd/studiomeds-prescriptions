@@ -31,15 +31,9 @@
         <nav class="navbar navbar-expand-md navbar-light shadow-sm">
             <div class="container">
                 <div class="row">
-                    @auth
-                    <a class="navbar-brand" href="{{ url('/dashboard') }}">
-                        <img src="{{ url('/images/Studiomeds_cropped.png') }}" class="logo" width='250'>
-                    </a>
-                    @else
                     <span class="navbar-brand">
                         <img src="{{ url('/images/Studiomeds_cropped.png') }}" class="logo" width='250'>
                     </span>
-                    @endauth
                 </div>
                 <br>
                 <div class="row">
