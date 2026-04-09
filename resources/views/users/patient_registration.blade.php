@@ -698,21 +698,15 @@
             checkSubmitEnabled();
         });
 
-        // Intercept form submit → validate, then allow through
-        var formValidated = false;
+        // Validate on submit — only preventDefault when something actually fails
         $('#cqiForm').on('submit', function(e) {
-            // If already validated, let the submission go through normally (includes files)
-            if (formValidated) {
-                return true;
-            }
-
-            e.preventDefault();
 
             // 1. Age check
             $('#dob-age-error').remove();
             const dob = $('#date_of_birth').val();
             const age = calculateAge(dob);
             if (age !== null && age < 18) {
+                e.preventDefault();
                 $('#date_of_birth').after('<div id="dob-age-error" class="alert alert-danger mt-2">You must be 18 or older to submit this form.</div>');
                 $('#date_of_birth')[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
@@ -721,6 +715,7 @@
             // 2. All 12 medical questions must be answered
             $('#medical-incomplete-error').remove();
             if (!allQuestionsAnswered()) {
+                e.preventDefault();
                 const firstUnanswered = medicalFields.find(function(name) {
                     return $('input[name="' + name + '"]:checked').length === 0;
                 });
@@ -731,15 +726,14 @@
                 return;
             }
 
-            // 3. If any Yes — show medical warning modal (cannot proceed)
+            // 3. If any Yes — show medical warning modal, block submission
             if (anyYesSelected()) {
+                e.preventDefault();
                 $('#medicalWarningModal').modal('show');
                 return;
             }
 
-            // 4. All No — set flag and re-trigger submit so files are included properly
-            formValidated = true;
-            $('#cqiForm').submit();
+            // 4. All checks passed — form submits normally, files included
         });
 
         // "I Understand" closes warning modal — user stays on form to review answers
