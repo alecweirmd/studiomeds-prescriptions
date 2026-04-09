@@ -117,14 +117,14 @@
                         <label class="form-label">Driver’s License</label>
                         <small class="text-muted d-block mb-1">Take a photo or upload from your gallery.</small>
                         <input type="file" name="drivers_license_image" class="form-control"
-                               accept="image/*" capture="environment" required>
+                               accept="image/*" required>
                     </div>
 
                     <div class="col-md-6">
                         <label class="form-label">Selfie</label>
                         <small class="text-muted d-block mb-1">Take a selfie or upload a photo of yourself.</small>
                         <input type="file" name="selfie_image" class="form-control"
-                               accept="image/*" capture="user" required>
+                               accept="image/*" required>
                     </div>
                 </div>
 
@@ -307,8 +307,8 @@
 
         </div>
 
-        <div class="card-footer text-end">
-            <button type="submit" class="btn btn-primary submit" id="submitBtn" disabled>
+        <div class="card-footer text-start">
+            <button type="submit" class="btn btn-primary btn-lg submit" id="submitBtn" disabled>
                 <i class="fas fa-save"></i> Submit
             </button>
         </div>
@@ -688,6 +688,8 @@
 
         // Show follow-up warning live and update submit button state
         $('.q-radio').on('change', function() {
+            // Clear red border from the answered question's container
+            $(this).closest('.mb-3, .py-2').css({ 'outline': '', 'border-radius': '', 'padding': '' });
             if (anyYesSelected()) {
                 $('#followUpHint').slideDown();
             } else {
@@ -723,6 +725,7 @@
                     return $('input[name="' + name + '"]:checked').length === 0;
                 });
                 const target = $('input[name="' + firstUnanswered + '"]').closest('.mb-3, .py-2');
+                target.css({ 'outline': '2px solid #dc3545', 'border-radius': '4px', 'padding': '8px' });
                 $('<div id="medical-incomplete-error" class="alert alert-danger mt-2">Please answer all medical history questions before submitting.</div>')
                     .insertBefore(target);
                 target[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
