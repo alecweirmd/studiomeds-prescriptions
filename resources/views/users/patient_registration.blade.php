@@ -2,8 +2,9 @@
 
 @section('content')
 <div class="card">
-    <div class="card-header">
+    <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="mb-0">Topical Anesthetic / CQI Screening</h3>
+        <a href="mailto:admin@studiomeds.com" class="btn btn-outline-secondary btn-sm">Having Trouble? Contact Us</a>
     </div>
 
     <form method="post" id="cqiForm" enctype="multipart/form-data" action="{{ url('users/store_patient') }}">
@@ -307,11 +308,10 @@
 
         </div>
 
-        <div class="card-footer text-start d-flex align-items-center gap-3">
+        <div class="card-footer text-start">
             <button type="submit" class="btn btn-primary btn-lg submit" id="submitBtn">
                 <i class="fas fa-save"></i> Submit
             </button>
-            <a href="https://studiomeds.com/#contact" target="_blank" class="text-muted small">Having Trouble? Contact us</a>
         </div>
 
     </form>
