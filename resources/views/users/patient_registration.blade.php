@@ -307,10 +307,11 @@
 
         </div>
 
-        <div class="card-footer text-start">
+        <div class="card-footer text-start d-flex align-items-center gap-3">
             <button type="submit" class="btn btn-primary btn-lg submit" id="submitBtn">
                 <i class="fas fa-save"></i> Submit
             </button>
+            <a href="mailto:admin@studiomeds.com" class="text-muted small">Having Trouble? Contact us</a>
         </div>
 
     </form>
