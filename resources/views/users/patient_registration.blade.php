@@ -133,9 +133,8 @@
                 <h3>Medical Screening Questions</h3>
 
                 <div class="py-2">
-                    <h5>Section 1: Allergies / Sensitivities</h5>
-                    <div class="py-2 mb-3">
-                        <label class="form-label">1. Have you ever had an allergic reaction to lidocaine or other “-caine” anesthetics (such as benzocaine, prilocaine, or tetracaine)?</label>
+<div class="py-2 mb-3">
+                        <label class=”form-label”>1. Have you ever had an allergic reaction to numbing creams or local anesthetics used by a dentist or doctor (such as lidocaine, benzocaine, or similar products)?</label>
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input q-radio" type="radio" name="lidocaine" id="lidocaine_yes" value="1" {{ old('lidocaine') === '1' ? 'checked' : '' }} required>
@@ -163,8 +162,7 @@
                         </div>
                     </div>
 
-                    <h5>Section 2: Skin Conditions / Open Wounds</h5>
-                    <div class="mb-3">
+<div class="mb-3">
                         <label class="form-label">3. Do you currently have broken skin, open wounds, or skin infections at the area where the topical will be applied?</label>
                         <div>
                             <div class="form-check form-check-inline">
@@ -192,8 +190,7 @@
                         </div>
                     </div>
 
-                    <h5>Section 3: Medical History</h5>
-                    <div class="mb-3">
+<div class="mb-3">
                         <label class="form-label">5. Do you have any heart rhythm problems (arrhythmias) or heart block?</label>
                         <div>
                             <div class="form-check form-check-inline">
@@ -249,9 +246,8 @@
                         </div>
                     </div>
 
-                    <h5>Section 4: Medications / Substances</h5>
-                    <div class="mb-3">
-                        <label class="form-label">9. Are you currently taking any antiarrhythmic medications (such as amiodarone, mexiletine, quinidine)?</label>
+<div class="mb-3">
+                        <label class="form-label">9. Are you currently taking any medications for an irregular heartbeat (such as amiodarone, mexiletine, or quinidine)?</label>
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input q-radio" type="radio" name="antiarrhythmic" id="antiarrhythmic_yes" value="1" {{ old('antiarrhythmic') === '1' ? 'checked' : '' }}>
@@ -278,8 +274,7 @@
                         </div>
                     </div>
 
-                    <h5>Section 5: Past Reactions / Complications</h5>
-                    <div class="mb-3">
+<div class="mb-3">
                         <label class="form-label">11. Have you ever fainted, felt dizzy, or had a severe reaction when using local anesthetics before?</label>
                         <div>
                             <div class="form-check form-check-inline">
@@ -294,7 +289,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">12. Have you ever been told you have a condition called methemoglobinemia or a blood disorder affecting oxygen carrying capacity?</label>
+                        <label class="form-label">12. Have you ever been told you have a condition called methemoglobinemia, or a blood disorder affecting how your blood carries oxygen?</label>
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input q-radio" type="radio" name="methemoglobinemia" id="methemoglobinemia_yes" value="1" {{ old('methemoglobinemia') === '1' ? 'checked' : '' }}>
