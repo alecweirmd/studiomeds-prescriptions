@@ -58,7 +58,7 @@
 
 
                 <div class="row g-3 p-2">
-                    <h3>User Information</h3>
+                    <h3>Your Information</h3>
 
                     <div class="col-md-3">
                         <label class="form-label">First Name</label>
@@ -131,6 +131,8 @@
                                accept="image/*" required>
                     </div>
                 </div>
+
+                <h3>Medical Screening Questions</h3>
 
                 <div class="py-2">
                     <h5>Section 1: Allergies / Sensitivities</h5>
