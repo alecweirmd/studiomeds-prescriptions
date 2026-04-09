@@ -30,8 +30,8 @@ class SendPatientApprovalEmail implements ShouldQueue
     {
         $patient = Patients::findOrFail($this->patientId);
 
-        $file1 = storage_path("app/patient_{$this->patientId}_bactine.pdf");
-        $file2 = storage_path("app/patient_{$this->patientId}_lidocaine.pdf");
+        $file1 = storage_path("app/bactine_{$this->patientId}.pdf");
+        $file2 = storage_path("app/lidocaine_{$this->patientId}.pdf");
 
         Pdf::loadView('pdf/bactine', ['patient' => $patient])->save($file1);
         Pdf::loadView('pdf/lidocaine', ['patient' => $patient])->save($file2);
@@ -40,7 +40,7 @@ class SendPatientApprovalEmail implements ShouldQueue
             $message->to($patient->email)
                 ->subject('Your Medications Are Approved')
                 ->attach($file1, ['as' => 'Bactine.pdf'])
-                ->attach($file2, ['as' => 'Preparation H.pdf']);
+                ->attach($file2, ['as' => 'Lidocaine Cream.pdf']);
         });
 
         @unlink($file1);

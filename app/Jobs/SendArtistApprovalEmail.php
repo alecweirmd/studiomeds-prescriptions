@@ -44,7 +44,7 @@ class SendArtistApprovalEmail implements ShouldQueue
             $message->to($artist->email)
                 ->subject('Your Medications Are Approved')
                 ->attach($file1, ['as' => 'Bactine.pdf'])
-                ->attach($file2, ['as' => 'Preparation H.pdf']);
+                ->attach($file2, ['as' => 'Lidocaine Cream.pdf']);
         });
 
         @unlink($file1);

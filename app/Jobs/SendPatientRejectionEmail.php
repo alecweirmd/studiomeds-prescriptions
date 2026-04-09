@@ -31,7 +31,7 @@ class SendPatientRejectionEmail implements ShouldQueue
 
         Mail::send('emails/patient_rejection', ['patient' => $patient], function ($message) use ($patient) {
             $message->to($patient->email)
-                ->subject('Your Prescriptions Could Not Be Approved - DO NOT REPLY TO THIS EMAIL');
+                ->subject('StudioMeds - Your Prescriptions Could Not Be Approved');
         });
     }
 
