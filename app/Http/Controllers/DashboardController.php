@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\User;
 use App\Models\PatientsCQI;
 use App\Models\Patients;
 use Illuminate\Support\Facades\Session;
@@ -91,54 +90,13 @@ class DashboardController extends Controller
             ->filter(fn($p) => $p->patientsCQI && $p->patientsCQI->status == 0);
 
         foreach ($patients as $patient) {
+            $patient->patientsCQI->status = 1;
+            $patient->patientsCQI->save();
 
-            try {
-                // Get artist relationship or fallback
-                if ($patient->artist_id) {
-                    $artist = User::find($patient->artist_id);  // safe (find, not findOrFail)
-                } else {
-                    $artist = null; // No artist object
-                }
+            \App\Jobs\SendPatientApprovalEmail::dispatch($patient->id);
 
-                // Generate PDFs
-                $pdf1 = PDF::loadView('pdf/bactine', ['patient' => $patient]);
-                $pdf2 = PDF::loadView('pdf/lidocaine', ['patient' => $patient]);
-
-                $file1 = storage_path("app/bactine_{$patient->id}.pdf");
-                $file2 = storage_path("app/lidocaine_{$patient->id}.pdf");
-
-                $pdf1->save($file1);
-                $pdf2->save($file2);
-
-                // Send email to patient
-                Mail::send('emails/patient_approved', ['patient' => $patient], function ($message) use ($patient, $file1, $file2) {
-                    $message->to($patient->email)
-                        ->subject('Your Medications Are Approved')
-                        ->attach($file1, ['as' => 'Bactine.pdf'])
-                        ->attach($file2, ['as' => 'Lidocaine.pdf']);
-                });
-
-                // Send email to artist if available
-                if ($artist && $artist->email) {
-                    Mail::send('emails/artist_approved', ['patient' => $patient, 'artist' => $artist], function ($message) use ($artist, $file1, $file2) {
-                        $message->to($artist->email)
-                            ->subject('Your Patient Has Been Approved')
-                            ->attach($file1, ['as' => 'Bactine.pdf'])
-                            ->attach($file2, ['as' => 'Lidocaine.pdf']);
-                    });
-                }
-
-                // Delete temp files
-                unlink($file1);
-                unlink($file2);
-
-                // Update status to approved
-                $patient->patientsCQI->status = 1;
-                $patient->patientsCQI->save();
-            } catch (\Exception $e) {
-                // Log and continue loop instead of stopping
-                \Log::error('Bulk approval error for patient ' . $patient->id . ': ' . $e->getMessage());
-                continue;
+            if ($patient->artist_id) {
+                \App\Jobs\SendArtistApprovalEmail::dispatch($patient->id, $patient->artist_id);
             }
         }
 
