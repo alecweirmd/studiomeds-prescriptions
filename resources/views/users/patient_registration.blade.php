@@ -4,7 +4,7 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="mb-0">Topical Anesthetic / CQI Screening</h3>
-        <a href="mailto:admin@studiomeds.com" class="btn btn-outline-secondary btn-sm">Having Trouble? Contact Us</a>
+        <a href="mailto:admin@studiomeds.com" class="btn btn-sm" style="color:#1a9cd8;border-color:#1a9cd8;">Having Trouble? Contact Us</a>
     </div>
 
     <form method="post" id="cqiForm" enctype="multipart/form-data" action="{{ url('users/store_patient') }}">
