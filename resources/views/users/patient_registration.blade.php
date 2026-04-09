@@ -311,7 +311,7 @@
             <button type="submit" class="btn btn-primary btn-lg submit" id="submitBtn">
                 <i class="fas fa-save"></i> Submit
             </button>
-            <a href="mailto:admin@studiomeds.com" class="text-muted small">Having Trouble? Contact us</a>
+            <a href="https://studiomeds.com/#contact" target="_blank" class="text-muted small">Having Trouble? Contact us</a>
         </div>
 
     </form>

@@ -8,7 +8,8 @@
       "Bash(grep -n \"{{ \\\\$\\\\|{!!\\\\|@if\\\\|@foreach\" /c/Users/alecw/OneDrive/Desktop/studiomeds/www/resources/views/dashboards/doctor.blade.php)",
       "Bash(grep -rn 'include\\\\|require\\\\|eval\\\\|$_GET\\\\|$_POST\\\\|$_REQUEST' /c/Users/alecw/OneDrive/Desktop/studiomeds/www/app '--include=*.php')",
       "Bash(grep:*)",
-      "Bash(cmd /c push.bat)"
+      "Bash(cmd /c push.bat)",
+      "WebFetch(domain:studiomeds.com)"
     ]
   }
 }
