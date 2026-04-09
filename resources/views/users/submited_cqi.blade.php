@@ -67,19 +67,19 @@
                 <h3>Artist Information</h3>
                 <div class="col-md-6">
                     <h4><strong>Drivers License:</strong></h4>
-                     @if($patient->drivers_license != NULL)
-                        <img class="img-fluid" src="{{url('/storage/')}}/{{$patient->drivers_license}}" />
-                        @else
-                        
-                        @endif
+                    @if($patient->drivers_license != NULL)
+                        <img class="img-fluid" src="{{ asset('storage/' . $patient->drivers_license) }}" />
+                    @else
+                        <p class="text-muted">No image uploaded.</p>
+                    @endif
                 </div>
                 <div class="col-md-6">
                     <h4><strong>Patient Selfie:</strong></h4>
                     @if($patient->patient_photo != NULL)
-                    <img class="img-fluid" src="{{url('/storage/')}}/{{$patient->patient_photo}}" />
+                        <img class="img-fluid" src="{{ asset('storage/' . $patient->patient_photo) }}" />
                     @else
-                        
-                        @endif
+                        <p class="text-muted">No image uploaded.</p>
+                    @endif
                 </div>
             </div>
 
