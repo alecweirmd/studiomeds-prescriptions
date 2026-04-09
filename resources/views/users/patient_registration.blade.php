@@ -697,7 +697,12 @@
         });
 
         // Validate on submit — only preventDefault when something actually fails
+        var paymentReady = false;
+
         $('#cqiForm').on('submit', function(e) {
+
+            // If payment has been confirmed, let the form post through normally
+            if (paymentReady) { return; }
 
             // 1. Age check
             $('#dob-age-error').remove();
@@ -779,10 +784,12 @@
                             } else {
                                 $('#recaptcha_token').val(token);
                             }
+                            paymentReady = true;
                             $('#cqiForm').submit();
                         }).catch(function() { onError(); });
                 });
             } else {
+                paymentReady = true;
                 $('#cqiForm').submit();
             }
         });
