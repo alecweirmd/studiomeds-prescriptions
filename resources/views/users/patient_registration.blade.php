@@ -740,8 +740,21 @@
             $('#paymentModal').modal('show');
         });
 
-        // "I Understand" closes warning modal — user stays on form to review answers
+        // "I Understand" closes warning modal and records the acknowledgement for audit
         $('#medicalWarningAcknowledge').on('click', function() {
+            var triggeredQuestions = [];
+            ['lidocaine','bactine','broken_skin','eczema','heart_rhythm','liver_disease','seizures','pregnant','antiarrhythmic','seizure_meds','fainted','methemoglobinemia'].forEach(function(name) {
+                if ($('input[name="' + name + '"]:checked').val() === '1') {
+                    triggeredQuestions.push(name);
+                }
+            });
+
+            $.post('/ajax/record_acknowledgement', {
+                _token:             $('meta[name="csrf-token"]').attr('content'),
+                patient_id:         $('#patient_id').val(),
+                triggered_questions: triggeredQuestions
+            });
+
             $('#medicalWarningModal').modal('hide');
         });
 

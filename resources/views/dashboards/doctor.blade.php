@@ -6,8 +6,11 @@
 
     <div class="col-md-12">
         <div class="card">
-            <div class="card-header">
-                <h2>Submitted Client Forms</h2>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Submitted Client Forms</h2>
+                <a href="{{ url('/dashboard/flagged_submissions') }}" class="btn btn-danger btn-sm">
+                    &#9888; Flagged Submissions
+                </a>
             </div>
 
             <div class="card-body">

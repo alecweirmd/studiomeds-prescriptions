@@ -9,7 +9,8 @@
       "Bash(grep -rn 'include\\\\|require\\\\|eval\\\\|$_GET\\\\|$_POST\\\\|$_REQUEST' /c/Users/alecw/OneDrive/Desktop/studiomeds/www/app '--include=*.php')",
       "Bash(grep:*)",
       "Bash(cmd /c push.bat)",
-      "WebFetch(domain:studiomeds.com)"
+      "WebFetch(domain:studiomeds.com)",
+      "Bash(php artisan:*)"
     ]
   }
 }

@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use App\Services\AuthorizeNetService;
+use App\Models\PatientAcknowledgement;
+use Barryvdh\DomPDF\Facade\Pdf;
 use net\authorize\api\contract\v1 as AnetAPI;
 use net\authorize\api\controller as AnetController;
 use Illuminate\Support\Facades\Http;
@@ -355,6 +357,38 @@ class UsersController extends Controller
             $answers->methemoglobinemia = $request->methemoglobinemia;
             $answers->save();
 
+            // If this patient acknowledged the medical warning, generate a flagged submission PDF
+            $acknowledgement = PatientAcknowledgement::where('patient_id', $patient->id)->latest()->first();
+            if ($acknowledgement) {
+                $questionLabels = [
+                    'lidocaine'         => 'Q1: Allergic reaction to numbing creams or local anesthetics',
+                    'bactine'           => 'Q2: Allergic reaction to Bactine or topical antiseptics',
+                    'broken_skin'       => 'Q3: Broken skin or open wounds at treatment area',
+                    'eczema'            => 'Q4: Severe eczema, psoriasis, or skin conditions at treatment area',
+                    'heart_rhythm'      => 'Q5: Heart rhythm problems or arrhythmias',
+                    'liver_disease'     => 'Q6: Severe liver disease',
+                    'seizures'          => 'Q7: Seizures related to medications or anesthetics',
+                    'pregnant'          => 'Q8: Currently pregnant or breastfeeding',
+                    'antiarrhythmic'    => 'Q9: Medications for irregular heartbeat',
+                    'seizure_meds'      => 'Q10: Medications for seizures or nerve pain',
+                    'fainted'           => 'Q11: Fainted or severe reaction to local anesthetics',
+                    'methemoglobinemia' => 'Q12: Methemoglobinemia or blood oxygen disorder',
+                ];
+                try {
+                    $pdf = Pdf::loadView('pdf/flagged_submission', [
+                        'patient'        => $patient,
+                        'answers'        => $answers,
+                        'acknowledgement' => $acknowledgement,
+                        'questionLabels' => $questionLabels,
+                    ]);
+                    $filename = 'flagged_' . $patient->id . '_' . time() . '.pdf';
+                    Storage::put('flagged_submissions/' . $filename, $pdf->output());
+                    $acknowledgement->update(['pdf_path' => $filename]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to generate flagged submission PDF for patient ' . $patient->id . ': ' . $e->getMessage());
+                }
+            }
+
             $emailmessage = "New Submission:" . $patient->first_name . ' ' . $patient->last_name;
 
             \App\Jobs\SendAdminNotificationEmail::dispatch($emailmessage, $patient->id);
@@ -405,5 +439,25 @@ class UsersController extends Controller
         $patient->save();
 
         return $patient->id;
+    }
+
+    public function recordAcknowledgement(Request $request)
+    {
+        $patientId = $request->input('patient_id');
+        $triggeredQuestions = $request->input('triggered_questions', []);
+
+        if (!is_array($triggeredQuestions) || empty($triggeredQuestions)) {
+            return response()->json(['recorded' => false, 'reason' => 'no triggered questions'], 422);
+        }
+
+        PatientAcknowledgement::create([
+            'patient_id'          => $patientId ?: null,
+            'session_id'          => session()->getId(),
+            'ip_address'          => $request->ip(),
+            'triggered_questions' => $triggeredQuestions,
+            'acknowledged_at'     => now(),
+        ]);
+
+        return response()->json(['recorded' => true]);
     }
 }

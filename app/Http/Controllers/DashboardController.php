@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\PatientsCQI;
 use App\Models\Patients;
+use App\Models\PatientAcknowledgement;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class DashboardController extends Controller
@@ -148,5 +151,53 @@ class DashboardController extends Controller
     {
 
         return view('info/training');
+    }
+
+    public function flaggedSubmissions()
+    {
+        if (session()->get('user_type') != 1) {
+            abort(403);
+        }
+
+        $questionLabels = [
+            'lidocaine'         => 'Q1: Allergic reaction to numbing creams/anesthetics',
+            'bactine'           => 'Q2: Allergic reaction to Bactine/antiseptics',
+            'broken_skin'       => 'Q3: Broken skin or open wounds',
+            'eczema'            => 'Q4: Severe eczema, psoriasis, or skin conditions',
+            'heart_rhythm'      => 'Q5: Heart rhythm problems',
+            'liver_disease'     => 'Q6: Severe liver disease',
+            'seizures'          => 'Q7: Seizures from medications/anesthetics',
+            'pregnant'          => 'Q8: Pregnant or breastfeeding',
+            'antiarrhythmic'    => 'Q9: Medications for irregular heartbeat',
+            'seizure_meds'      => 'Q10: Seizure/nerve pain medications',
+            'fainted'           => 'Q11: Fainted or severe reaction to anesthetics',
+            'methemoglobinemia' => 'Q12: Methemoglobinemia or blood oxygen disorder',
+        ];
+
+        $flagged = PatientAcknowledgement::with(['patient.patientsCQI'])
+            ->whereNotNull('patient_id')
+            ->whereNotNull('pdf_path')
+            ->latest('acknowledged_at')
+            ->get();
+
+        return view('dashboards/flagged_submissions', compact('flagged', 'questionLabels'));
+    }
+
+    public function downloadFlaggedPdf($id)
+    {
+        if (session()->get('user_type') != 1) {
+            abort(403);
+        }
+
+        $ack = PatientAcknowledgement::findOrFail($id);
+
+        if (!$ack->pdf_path || !Storage::exists('flagged_submissions/' . $ack->pdf_path)) {
+            abort(404, 'PDF not found.');
+        }
+
+        return response(Storage::get('flagged_submissions/' . $ack->pdf_path), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $ack->pdf_path . '"',
+        ]);
     }
 }

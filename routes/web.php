@@ -22,7 +22,11 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/dashboard/training', 'App\Http\Controllers\DashboardController@training');
     Route::post('/dashboard/reject_patient/{id}', 'App\Http\Controllers\DashboardController@rejectPatient');
     Route::get('/dashboard/approve_all_patients/', 'App\Http\Controllers\DashboardController@approveAllPatients');
+    Route::get('/dashboard/flagged_submissions', 'App\Http\Controllers\DashboardController@flaggedSubmissions');
+    Route::get('/dashboard/flagged_pdf/{id}', 'App\Http\Controllers\DashboardController@downloadFlaggedPdf');
 });
+
+Route::post('/ajax/record_acknowledgement', 'App\Http\Controllers\UsersController@recordAcknowledgement');
 
 Route::get('/register', 'App\Http\Controllers\UsersController@artist_register');
 Route::post('users/store_artist', 'App\Http\Controllers\UsersController@store_artist');
