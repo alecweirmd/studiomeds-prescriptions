@@ -412,7 +412,6 @@
     </div>
 </div>
 
-{{-- PAYMENT MODAL TEMPORARILY DISABLED — restore when Authorize.net is ready
 <div class="modal fade" id="paymentModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -478,7 +477,6 @@
         </div>
     </div>
 </div>
---}}
 
 @endsection
 
@@ -733,7 +731,9 @@
                 return;
             }
 
-            // 4. All checks passed — form submits normally, files included
+            // 4. All No — show payment modal
+            e.preventDefault();
+            $('#paymentModal').modal('show');
         });
 
         // "I Understand" closes warning modal — user stays on form to review answers
@@ -742,42 +742,50 @@
         });
 
 
-        // PAYMENT MODAL JS TEMPORARILY DISABLED — restore when Authorize.net is ready
-        // $('#modal_exp_month').on('input', function() {
-        //     this.value = this.value.replace(/\D/g, '').slice(0, 2);
-        //     if (this.value.length === 2) { $('#modal_exp_year').focus(); }
-        // });
-        // $('#modal_exp_year').on('input', function() {
-        //     this.value = this.value.replace(/\D/g, '').slice(0, 2);
-        //     if (this.value.length === 2) { $('#modal_cvc').focus(); }
-        // });
-        // $('#confirmPaymentBtn').on('click', function() {
-        //     $('#confirmPaymentBtn').prop('disabled', true).text("Processing...");
-        //     $('#paymentProcessing').show();
-        //     $('<input type="hidden" name="card_number">').val($('#modal_card_number').val()).appendTo('#cqiForm');
-        //     $('<input type="hidden" name="card_exp_month">').val($('#modal_exp_month').val()).appendTo('#cqiForm');
-        //     $('<input type="hidden" name="card_exp_year">').val($('#modal_exp_year').val()).appendTo('#cqiForm');
-        //     $('<input type="hidden" name="card_cvc">').val($('#modal_cvc').val()).appendTo('#cqiForm');
-        //     $('<input type="hidden" name="payment_amount">').val($('#modal_payment_amount').val()).appendTo('#cqiForm');
-        //     var siteKey = '{{ config("services.recaptcha.site_key") }}';
-        //     function doSubmit() { $('#cqiForm')[0].submit(); }
-        //     function onError() {
-        //         $('#confirmPaymentBtn').prop('disabled', false).text("Confirm Payment");
-        //         $('#paymentProcessing').hide();
-        //         alert('Something went wrong. Please try again.');
-        //     }
-        //     if (siteKey && typeof grecaptcha !== 'undefined') {
-        //         grecaptcha.ready(function() {
-        //             grecaptcha.execute(siteKey, { action: 'submit_patient' })
-        //                 .then(function(token) {
-        //                     if ($('#recaptcha_token').length === 0) {
-        //                         $('<input>').attr({ type: 'hidden', id: 'recaptcha_token', name: 'recaptcha_token', value: token }).appendTo('#cqiForm');
-        //                     } else { $('#recaptcha_token').val(token); }
-        //                     doSubmit();
-        //                 }).catch(function() { onError(); });
-        //         });
-        //     } else { doSubmit(); }
-        // });
+        $('#modal_exp_month').on('input', function() {
+            this.value = this.value.replace(/\D/g, '').slice(0, 2);
+            if (this.value.length === 2) { $('#modal_exp_year').focus(); }
+        });
+
+        $('#modal_exp_year').on('input', function() {
+            this.value = this.value.replace(/\D/g, '').slice(0, 2);
+            if (this.value.length === 2) { $('#modal_cvc').focus(); }
+        });
+
+        $('#confirmPaymentBtn').on('click', function() {
+            $('#confirmPaymentBtn').prop('disabled', true).text("Processing...");
+            $('#paymentProcessing').show();
+
+            $('<input type="hidden" name="card_number">').val($('#modal_card_number').val()).appendTo('#cqiForm');
+            $('<input type="hidden" name="card_exp_month">').val($('#modal_exp_month').val()).appendTo('#cqiForm');
+            $('<input type="hidden" name="card_exp_year">').val($('#modal_exp_year').val()).appendTo('#cqiForm');
+            $('<input type="hidden" name="card_cvc">').val($('#modal_cvc').val()).appendTo('#cqiForm');
+            $('<input type="hidden" name="payment_amount">').val($('#modal_payment_amount').val()).appendTo('#cqiForm');
+
+            var siteKey = '{{ config("services.recaptcha.site_key") }}';
+
+            function onError() {
+                $('#confirmPaymentBtn').prop('disabled', false).text("Pay & Submit");
+                $('#paymentProcessing').hide();
+                alert('Something went wrong. Please try again.');
+            }
+
+            if (siteKey && typeof grecaptcha !== 'undefined') {
+                grecaptcha.ready(function() {
+                    grecaptcha.execute(siteKey, { action: 'submit_patient' })
+                        .then(function(token) {
+                            if ($('#recaptcha_token').length === 0) {
+                                $('<input>').attr({ type: 'hidden', id: 'recaptcha_token', name: 'recaptcha_token', value: token }).appendTo('#cqiForm');
+                            } else {
+                                $('#recaptcha_token').val(token);
+                            }
+                            $('#cqiForm').submit();
+                        }).catch(function() { onError(); });
+                });
+            } else {
+                $('#cqiForm').submit();
+            }
+        });
     });
 </script>
 @endsection
