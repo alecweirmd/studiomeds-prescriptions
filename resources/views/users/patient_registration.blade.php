@@ -107,7 +107,7 @@
 
                     <div class="col-md-3">
                         <label class="form-label">ZIP</label>
-                        <input type="text" class="form-control" name="zip" inputmode="numeric" value="{{ old('zip') }}" autocomplete="postal-code" required>
+                        <input type="text" class="form-control" name="zip" inputmode="numeric" value="{{ old('zip') }}" autocomplete="postal-code" pattern="\d{5}(-\d{4})?" maxlength="10" placeholder="12345" required>
                     </div>
                 </div>
 

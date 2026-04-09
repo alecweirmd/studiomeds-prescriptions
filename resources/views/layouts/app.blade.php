@@ -31,12 +31,15 @@
         <nav class="navbar navbar-expand-md navbar-light shadow-sm">
             <div class="container">
                 <div class="row">
+                    @auth
                     <a class="navbar-brand" href="{{ url('/dashboard') }}">
                         <img src="{{ url('/images/Studiomeds_cropped.png') }}" class="logo" width='250'>
                     </a>
-                    @guest
                     @else
-                    @endif
+                    <span class="navbar-brand">
+                        <img src="{{ url('/images/Studiomeds_cropped.png') }}" class="logo" width='250'>
+                    </span>
+                    @endauth
                 </div>
                 <br>
                 <div class="row">
@@ -52,11 +55,7 @@
                         <!-- Right Side Of Navbar -->
                         <ul class="navbar-nav ms-auto">
                             <!-- Authentication Links -->
-                            @guest
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a>
-                            </li>
-                            @else
+                            @auth
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url('/dashboard') }}">{{ __('My Dashboard') }}</a>
                             </li>

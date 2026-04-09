@@ -221,9 +221,13 @@ class UsersController extends Controller
         }
 
         $request->validate(array_merge([
+            'email'         => ['required', 'email'],
+            'zip'           => ['required', 'regex:/^\d{5}(-\d{4})?$/'],
             'state'         => ['required', 'string', \Illuminate\Validation\Rule::in($validStates)],
             'date_of_birth' => ['required', 'date', 'before_or_equal:' . now()->subYears(18)->toDateString()],
         ], $medicalValidation), [
+            'email.email'                   => 'Please enter a valid email address.',
+            'zip.regex'                     => 'Please enter a valid US ZIP code (e.g. 12345 or 12345-6789).',
             'state.in'                      => 'Please select a valid US state from the list.',
             'date_of_birth.before_or_equal' => 'You must be 18 or older to submit this form.',
         ]);
