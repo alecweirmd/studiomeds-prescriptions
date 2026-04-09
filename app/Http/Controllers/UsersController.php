@@ -291,15 +291,34 @@ class UsersController extends Controller
             $patient->save();
 
             if ($request->hasFile('drivers_license_image')) {
-                $driversLicensePath = $request->file('drivers_license_image')
-                    ->store("uploads/{$patient->id}/drivers_license", 'public');
+                try {
+                    $path = $request->file('drivers_license_image')
+                        ->store("uploads/{$patient->id}/drivers_license", 'public');
+                    $driversLicensePath = $path ?: null;
+                    if (!$driversLicensePath) {
+                        Log::error("Driver's license upload returned false for patient {$patient->id}");
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Driver's license upload failed for patient {$patient->id}: " . $e->getMessage());
+                }
+            } else {
+                Log::warning("No driver's license file received for patient {$patient->id}");
             }
 
             if ($request->hasFile('selfie_image')) {
-                $selfiePath = $request->file('selfie_image')
-                    ->store("uploads/{$patient->id}/selfie", 'public');
+                try {
+                    $path = $request->file('selfie_image')
+                        ->store("uploads/{$patient->id}/selfie", 'public');
+                    $selfiePath = $path ?: null;
+                    if (!$selfiePath) {
+                        Log::error("Selfie upload returned false for patient {$patient->id}");
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Selfie upload failed for patient {$patient->id}: " . $e->getMessage());
+                }
+            } else {
+                Log::warning("No selfie file received for patient {$patient->id}");
             }
-
 
             $patient->update([
                 'drivers_license' => $driversLicensePath,
