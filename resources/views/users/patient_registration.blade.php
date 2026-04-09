@@ -4,7 +4,10 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="mb-0">Topical Anesthetic / CQI Screening</h3>
-        <a href="mailto:admin@studiomeds.com?subject=StudioMeds%20-%20Intake%20Form%20Help" class="btn btn-sm" style="color:#1a9cd8;border-color:#1a9cd8;">Having Trouble? Contact Us</a>
+        <a href="mailto:admin@studiomeds.com?subject=StudioMeds%20-%20Intake%20Form%20Help" class="btn btn-sm" id="contactHelpBtn" style="color:#1a9cd8;border-color:#1a9cd8;position:relative;">Having Trouble? Contact Us</a>
+<span id="contactHelpFallback" style="display:none;position:absolute;right:1rem;top:3.5rem;z-index:9999;background:#fff;border:1px solid #1a9cd8;color:#333;padding:0.5rem 0.75rem;border-radius:6px;font-size:0.85rem;box-shadow:0 2px 8px rgba(0,0,0,0.12);white-space:nowrap;">
+    Please email us at <a href="mailto:admin@studiomeds.com" style="color:#1a9cd8;">admin@studiomeds.com</a> for assistance.
+</span>
     </div>
 
     <form method="post" id="cqiForm" enctype="multipart/form-data" action="{{ url('users/store_patient') }}">
@@ -486,6 +489,21 @@
 @section('script')
 <script>
     $(document).ready(function() {
+        $('#contactHelpBtn').on('click', function() {
+            var emailOpened = false;
+            $(window).one('blur', function() { emailOpened = true; });
+            setTimeout(function() {
+                if (!emailOpened) {
+                    $('#contactHelpFallback').fadeIn(200);
+                    $(document).one('click', function(e) {
+                        if (!$(e.target).closest('#contactHelpBtn, #contactHelpFallback').length) {
+                            $('#contactHelpFallback').fadeOut(200);
+                        }
+                    });
+                }
+            }, 500);
+        });
+
 
         @if(!$errors->any())
             @if(!old('patient_id'))
