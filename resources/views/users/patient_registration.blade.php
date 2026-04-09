@@ -412,6 +412,7 @@
     </div>
 </div>
 
+{{-- PAYMENT MODAL TEMPORARILY DISABLED — restore when Authorize.net is ready
 <div class="modal fade" id="paymentModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -451,7 +452,6 @@
                     </div>
 
                     <input type="hidden" id="modal_payment_amount" value="35.00">
-                    <!--<input type="hidden" id="modal_payment_amount" value="1.00">-->
                 </div>
                 <div class="mt-2 d-flex align-items-center gap-2">
                     <img src="{{ asset('images/cards/visa.svg') }}" height="28" alt="Visa">
@@ -478,6 +478,7 @@
         </div>
     </div>
 </div>
+--}}
 
 @endsection
 
@@ -730,8 +731,8 @@
                 return;
             }
 
-            // 4. All No — proceed to payment
-            $('#paymentModal').modal('show');
+            // 4. All No — submit directly (payment temporarily disabled)
+            $('#cqiForm')[0].submit();
         });
 
         // "I Understand" closes warning modal — user stays on form to review answers
@@ -740,72 +741,41 @@
         });
 
 
-        // Expiration month: digits only, auto-jump to year after 2 digits
-        $('#modal_exp_month').on('input', function() {
-            this.value = this.value.replace(/\D/g, '').slice(0, 2);
-            if (this.value.length === 2) {
-                $('#modal_exp_year').focus();
-            }
-        });
-
-        // Expiration year: digits only, max 2
-        $('#modal_exp_year').on('input', function() {
-            this.value = this.value.replace(/\D/g, '').slice(0, 2);
-        });
-
-        // Confirm payment button — generate fresh reCAPTCHA token just before submitting
-        $('#confirmPaymentBtn').on('click', function() {
-
-            // Disable button + show spinner
-            $('#confirmPaymentBtn').prop('disabled', true).text("Processing...");
-            $('#paymentProcessing').show();
-
-            // Copy payment info into form
-            $('<input type="hidden" name="card_number">').val($('#modal_card_number').val()).appendTo('#cqiForm');
-            $('<input type="hidden" name="card_exp_month">').val($('#modal_exp_month').val()).appendTo('#cqiForm');
-            $('<input type="hidden" name="card_exp_year">').val($('#modal_exp_year').val()).appendTo('#cqiForm');
-            $('<input type="hidden" name="card_cvc">').val($('#modal_cvc').val()).appendTo('#cqiForm');
-            $('<input type="hidden" name="payment_amount">').val($('#modal_payment_amount').val()).appendTo('#cqiForm');
-
-            var siteKey = '{{ config("services.recaptcha.site_key") }}';
-
-            function doSubmit() {
-                $('#cqiForm')[0].submit();
-            }
-
-            function onError() {
-                // Re-enable button so user can try again
-                $('#confirmPaymentBtn').prop('disabled', false).text("Confirm Payment");
-                $('#paymentProcessing').hide();
-                alert('Something went wrong. Please try again.');
-            }
-
-            // Only run reCAPTCHA if a site key is configured (production)
-            if (siteKey && typeof grecaptcha !== 'undefined') {
-                grecaptcha.ready(function() {
-                    grecaptcha.execute(siteKey, { action: 'submit_patient' })
-                        .then(function(token) {
-                            if ($('#recaptcha_token').length === 0) {
-                                $('<input>').attr({
-                                    type: 'hidden',
-                                    id: 'recaptcha_token',
-                                    name: 'recaptcha_token',
-                                    value: token
-                                }).appendTo('#cqiForm');
-                            } else {
-                                $('#recaptcha_token').val(token);
-                            }
-                            doSubmit();
-                        })
-                        .catch(function() {
-                            onError();
-                        });
-                });
-            } else {
-                // No reCAPTCHA key — staging/local, submit directly
-                doSubmit();
-            }
-        });
+        // PAYMENT MODAL JS TEMPORARILY DISABLED — restore when Authorize.net is ready
+        // $('#modal_exp_month').on('input', function() {
+        //     this.value = this.value.replace(/\D/g, '').slice(0, 2);
+        //     if (this.value.length === 2) { $('#modal_exp_year').focus(); }
+        // });
+        // $('#modal_exp_year').on('input', function() {
+        //     this.value = this.value.replace(/\D/g, '').slice(0, 2);
+        // });
+        // $('#confirmPaymentBtn').on('click', function() {
+        //     $('#confirmPaymentBtn').prop('disabled', true).text("Processing...");
+        //     $('#paymentProcessing').show();
+        //     $('<input type="hidden" name="card_number">').val($('#modal_card_number').val()).appendTo('#cqiForm');
+        //     $('<input type="hidden" name="card_exp_month">').val($('#modal_exp_month').val()).appendTo('#cqiForm');
+        //     $('<input type="hidden" name="card_exp_year">').val($('#modal_exp_year').val()).appendTo('#cqiForm');
+        //     $('<input type="hidden" name="card_cvc">').val($('#modal_cvc').val()).appendTo('#cqiForm');
+        //     $('<input type="hidden" name="payment_amount">').val($('#modal_payment_amount').val()).appendTo('#cqiForm');
+        //     var siteKey = '{{ config("services.recaptcha.site_key") }}';
+        //     function doSubmit() { $('#cqiForm')[0].submit(); }
+        //     function onError() {
+        //         $('#confirmPaymentBtn').prop('disabled', false).text("Confirm Payment");
+        //         $('#paymentProcessing').hide();
+        //         alert('Something went wrong. Please try again.');
+        //     }
+        //     if (siteKey && typeof grecaptcha !== 'undefined') {
+        //         grecaptcha.ready(function() {
+        //             grecaptcha.execute(siteKey, { action: 'submit_patient' })
+        //                 .then(function(token) {
+        //                     if ($('#recaptcha_token').length === 0) {
+        //                         $('<input>').attr({ type: 'hidden', id: 'recaptcha_token', name: 'recaptcha_token', value: token }).appendTo('#cqiForm');
+        //                     } else { $('#recaptcha_token').val(token); }
+        //                     doSubmit();
+        //                 }).catch(function() { onError(); });
+        //         });
+        //     } else { doSubmit(); }
+        // });
     });
 </script>
 @endsection

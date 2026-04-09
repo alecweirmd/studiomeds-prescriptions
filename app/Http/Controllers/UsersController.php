@@ -243,34 +243,34 @@ class UsersController extends Controller
             return back()->withErrors(['patient' => 'Something went wrong.  Please refresh the page and try again.'])->withInput();
         }
 
-        $request->validate([
-            'card_number'    => ['required', 'regex:/^\d{13,19}$/'],
-            'card_exp_month' => 'required|digits:2',
-            'card_exp_year'  => 'required|digits:2',
-            'card_cvc'       => ['required', 'regex:/^\d{3,4}$/'],
-            'payment_amount' => 'required|numeric|min:0.01',
-        ], [
-            'card_number.regex'    => 'Please enter a valid card number.',
-            'card_exp_month.digits'=> 'Expiration month must be 2 digits.',
-            'card_exp_year.digits' => 'Expiration year must be 2 digits.',
-            'card_cvc.regex'       => 'Please enter a valid CVC.',
-        ]);
+        // PAYMENT TEMPORARILY DISABLED — restore when Authorize.net is ready
+        // $request->validate([
+        //     'card_number'    => ['required', 'regex:/^\d{13,19}$/'],
+        //     'card_exp_month' => 'required|digits:2',
+        //     'card_exp_year'  => 'required|digits:2',
+        //     'card_cvc'       => ['required', 'regex:/^\d{3,4}$/'],
+        //     'payment_amount' => 'required|numeric|min:0.01',
+        // ], [
+        //     'card_number.regex'    => 'Please enter a valid card number.',
+        //     'card_exp_month.digits'=> 'Expiration month must be 2 digits.',
+        //     'card_exp_year.digits' => 'Expiration year must be 2 digits.',
+        //     'card_cvc.regex'       => 'Please enter a valid CVC.',
+        // ]);
 
-        $paymentSuccess = app(\App\Services\AuthorizeNetService::class)
-            ->chargeOneTime(
-                $request->card_number,
-                $request->card_exp_month,
-                $request->card_exp_year,
-                $request->card_cvc,
-                $request->payment_amount
-            );
+        // $paymentSuccess = app(\App\Services\AuthorizeNetService::class)
+        //     ->chargeOneTime(
+        //         $request->card_number,
+        //         $request->card_exp_month,
+        //         $request->card_exp_year,
+        //         $request->card_cvc,
+        //         $request->payment_amount
+        //     );
 
-        if (!$paymentSuccess['success']) {
-
-            return back()
-                ->withErrors(['payment' => 'Payment failed: ' . $paymentSuccess['message']])
-                ->withInput();
-        } else {
+        // if (!$paymentSuccess['success']) {
+        //     return back()
+        //         ->withErrors(['payment' => 'Payment failed: ' . $paymentSuccess['message']])
+        //         ->withInput();
+        // }
 
             $patient->first_name = $request->first_name;
             $patient->last_name = $request->last_name;
@@ -338,7 +338,6 @@ class UsersController extends Controller
             }
 
             return redirect('users/thank_you/');
-        }
     }
 
     public function show_cqi($patient_id)
