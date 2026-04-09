@@ -30,9 +30,7 @@
                 </div>
                 @endif
 
-                <div class="alert alert-warning" id="followUpHint" style="display:none;">
-                    <strong>Important:</strong> Patient answered "Yes" — follow up with a medical provider.
-                </div>
+
 
 
                 <div class="row g-3 p-2">
@@ -696,15 +694,9 @@
             return age;
         }
 
-        // Show follow-up warning live and clear highlight when question is answered
+        // Clear red border from the answered question's container
         $('.q-radio').on('change', function() {
-            // Clear red border from the answered question's container
             $(this).closest('.mb-3, .py-2').css({ 'outline': '', 'border-radius': '', 'padding': '' });
-            if (anyYesSelected()) {
-                $('#followUpHint').slideDown();
-            } else {
-                $('#followUpHint').slideUp();
-            }
         });
 
         // Validate on submit — only preventDefault when something actually fails
