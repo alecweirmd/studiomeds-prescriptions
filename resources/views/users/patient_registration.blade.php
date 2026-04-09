@@ -308,7 +308,7 @@
         </div>
 
         <div class="card-footer text-start">
-            <button type="submit" class="btn btn-primary btn-lg submit" id="submitBtn" disabled>
+            <button type="submit" class="btn btn-primary btn-lg submit" id="submitBtn">
                 <i class="fas fa-save"></i> Submit
             </button>
         </div>
@@ -675,18 +675,7 @@
             return age;
         }
 
-        function checkSubmitEnabled() {
-            if (allQuestionsAnswered()) {
-                $('#submitBtn').prop('disabled', false);
-            } else {
-                $('#submitBtn').prop('disabled', true);
-            }
-        }
-
-        // Check on page load (handles old() values after validation error)
-        checkSubmitEnabled();
-
-        // Show follow-up warning live and update submit button state
+        // Show follow-up warning live and clear highlight when question is answered
         $('.q-radio').on('change', function() {
             // Clear red border from the answered question's container
             $(this).closest('.mb-3, .py-2').css({ 'outline': '', 'border-radius': '', 'padding': '' });
@@ -695,7 +684,6 @@
             } else {
                 $('#followUpHint').slideUp();
             }
-            checkSubmitEnabled();
         });
 
         // Validate on submit — only preventDefault when something actually fails
