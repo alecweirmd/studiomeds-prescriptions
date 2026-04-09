@@ -180,25 +180,33 @@ class UsersController extends Controller
                 ])->withInput();
             }
 
-            $response = Http::asForm()->post(
-                'https://www.google.com/recaptcha/api/siteverify',
-                [
-                    'secret'   => config('services.recaptcha.secret_key'),
-                    'response' => $recaptchaToken,
-                    'remoteip' => $request->ip(),
-                ]
-            );
+            try {
+                $response = Http::timeout(5)->asForm()->post(
+                    'https://www.google.com/recaptcha/api/siteverify',
+                    [
+                        'secret'   => config('services.recaptcha.secret_key'),
+                        'response' => $recaptchaToken,
+                        'remoteip' => $request->ip(),
+                    ]
+                );
+                $captchaData = $response->json();
+            } catch (\Exception $e) {
+                Log::warning('reCAPTCHA verification unavailable: ' . $e->getMessage());
+                $captchaData = null;
+            }
 
-            $captchaData = $response->json();
-
-            if (
-                !$captchaData['success'] ||
-                $captchaData['score'] < config('services.recaptcha.score_threshold') ||
-                $captchaData['action'] !== 'submit_patient'
-            ) {
-                return back()->withErrors([
-                    'captcha' => 'Suspicious activity detected. Please try again.'
-                ])->withInput();
+            if ($captchaData !== null) {
+                if (
+                    !($captchaData['success'] ?? false) ||
+                    ($captchaData['score'] ?? 0) < config('services.recaptcha.score_threshold') ||
+                    ($captchaData['action'] ?? '') !== 'submit_patient'
+                ) {
+                    return back()->withErrors([
+                        'captcha' => 'Suspicious activity detected. Please try again.'
+                    ])->withInput();
+                }
+            } else {
+                Log::warning("reCAPTCHA skipped for patient submission (service unavailable), IP: {$request->ip()}");
             }
         }
 

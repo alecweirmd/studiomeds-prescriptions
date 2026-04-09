@@ -38,7 +38,7 @@ return [
     'recaptcha' => [
         'site_key'        => env('RECAPTCHA_SITE_KEY'),
         'secret_key'      => env('RECAPTCHA_SECRET_KEY'),
-        'score_threshold' => env('RECAPTCHA_SCORE_THRESHOLD', 0.5),
+        'score_threshold' => env('RECAPTCHA_SCORE_THRESHOLD', 0.3),
     ],
     'authorize' => [
         'login_id' => env('AUTHORIZE_LOGIN_ID'),
