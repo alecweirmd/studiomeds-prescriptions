@@ -326,13 +326,17 @@ class UsersController extends Controller
 
             $emailmessage = "New Submission:" . $patient->first_name . ' ' . $patient->last_name;
 
-            // send
-            Mail::raw($emailmessage, function ($m) {
-                $m->to(config('services.admin.notification_email'))
-                  ->bcc(config('services.admin.bcc_email'))
-                  ->from(config('services.admin.from_email'))
-                  ->subject('New Patient Submission');
-            });
+            try {
+                Mail::raw($emailmessage, function ($m) {
+                    $m->to(config('services.admin.notification_email'))
+                      ->bcc(config('services.admin.bcc_email'))
+                      ->from(config('services.admin.from_email'))
+                      ->subject('New Patient Submission');
+                });
+            } catch (\Exception $e) {
+                Log::error('Admin notification email failed for patient ' . $patient->id . ': ' . $e->getMessage());
+            }
+
             return redirect('users/thank_you/');
         }
     }
