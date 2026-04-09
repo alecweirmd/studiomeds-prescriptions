@@ -749,6 +749,7 @@
         // });
         // $('#modal_exp_year').on('input', function() {
         //     this.value = this.value.replace(/\D/g, '').slice(0, 2);
+        //     if (this.value.length === 2) { $('#modal_cvc').focus(); }
         // });
         // $('#confirmPaymentBtn').on('click', function() {
         //     $('#confirmPaymentBtn').prop('disabled', true).text("Processing...");
