@@ -199,6 +199,8 @@ class UsersController extends Controller
             }
 
             if ($captchaData !== null) {
+                Log::info('reCAPTCHA result - score: ' . ($captchaData['score'] ?? 'n/a') . ', action: ' . ($captchaData['action'] ?? 'n/a') . ', success: ' . (($captchaData['success'] ?? false) ? 'true' : 'false') . ', hostname: ' . ($captchaData['hostname'] ?? 'n/a'));
+
                 if (
                     !($captchaData['success'] ?? false) ||
                     ($captchaData['score'] ?? 0) < config('services.recaptcha.score_threshold') ||
