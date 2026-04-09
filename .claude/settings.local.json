@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git push:*)",
+      "Bash(git -C /c/Users/alecw/OneDrive/Desktop/studiomeds/www check-ignore .env)",
+      "Bash(git -C /c/Users/alecw/OneDrive/Desktop/studiomeds/www log --all --full-history --source --name-status -- \".env\")",
+      "Bash(git:*)",
+      "Bash(grep -n \"{{ \\\\$\\\\|{!!\\\\|@if\\\\|@foreach\" /c/Users/alecw/OneDrive/Desktop/studiomeds/www/resources/views/dashboards/doctor.blade.php)",
+      "Bash(grep -rn 'include\\\\|require\\\\|eval\\\\|$_GET\\\\|$_POST\\\\|$_REQUEST' /c/Users/alecw/OneDrive/Desktop/studiomeds/www/app '--include=*.php')",
+      "Bash(grep:*)"
+    ]
+  }
+}

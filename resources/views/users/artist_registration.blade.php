@@ -111,6 +111,9 @@
             <!-- Accept.js hidden token fields -->
             <input type="hidden" name="dataValue" id="dataValue">
             <input type="hidden" name="dataDescriptor" id="dataDescriptor">
+            {{-- Authorize.net public credentials served server-side, never hardcoded in JS --}}
+            <input type="hidden" id="authorize-client-key" value="{{ config('services.authorize.client_key') }}">
+            <input type="hidden" id="authorize-login-id" value="{{ config('services.authorize.login_id') }}">
         </div>
 
         <div class="card-footer text-end">
@@ -130,8 +133,8 @@ $(document).ready(function() {
         e.preventDefault();
 
         var authData = {
-            clientKey: "{{ config('services.authorize.client_key') }}",
-            apiLoginID: "{{ config('services.authorize.login_id') }}"
+            clientKey: document.getElementById('authorize-client-key').value,
+            apiLoginID: document.getElementById('authorize-login-id').value
         };
 
         var cardData = {

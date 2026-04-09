@@ -86,12 +86,13 @@ class UsersController extends Controller
 
             return redirect()->back()->with('success', 'Artist registered and subscription created.');
         } catch (\Exception $e) {
+            Log::error('Artist registration failed: ' . $e->getMessage(), ['exception' => $e]);
 
             if (isset($user)) {
                 $user->delete();
             }
 
-            return redirect()->back()->withErrors('Registration or subscription failed: ' . $e->getMessage());
+            return redirect()->back()->withErrors('Registration failed. Please try again or contact support.');
         }
     }
 
@@ -196,15 +197,6 @@ class UsersController extends Controller
             }
 
             if ($captchaData !== null) {
-                // TEMPORARY: log reCAPTCHA results to monitor real user scores
-                Log::info(sprintf(
-                    'reCAPTCHA result - score: %s, action: %s, success: %s, hostname: %s',
-                    $captchaData['score'] ?? 'n/a',
-                    $captchaData['action'] ?? 'n/a',
-                    ($captchaData['success'] ?? false) ? 'true' : 'false',
-                    $captchaData['hostname'] ?? 'n/a'
-                ));
-
                 if (
                     !($captchaData['success'] ?? false) ||
                     ($captchaData['score'] ?? 0) < config('services.recaptcha.score_threshold') ||
@@ -389,8 +381,6 @@ class UsersController extends Controller
      */
     public function callback(Request $request)
     {
-        Log::info("Authorize.net Callback", $request->all());
-
         $payload = $request->input('payload', []);
 
         if (

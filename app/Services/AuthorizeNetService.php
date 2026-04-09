@@ -252,9 +252,10 @@ class AuthorizeNetService {
                 'message' => $errorMsg,
             ];
         } catch (\Exception $e) {
+            Log::error('AuthorizeNet chargeOneTime exception: ' . $e->getMessage(), ['exception' => $e]);
             return [
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred processing your payment. Please try again or contact support.',
             ];
         }
     }
