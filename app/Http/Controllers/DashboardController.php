@@ -9,8 +9,6 @@ use App\Models\Patients;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Mail;
 
 class DashboardController extends Controller
 {
@@ -67,50 +65,18 @@ class DashboardController extends Controller
         if (session()->get('user_type') != 1) {
             abort(404, 'Access denied.');
         }
-        //Find the patient
         $patient = Patients::findOrFail($id);
-        if ($patient->artist_id) {
-            $artist = User::findOrFail($patient->artist_id);
-        } else {
-            $artist = $patient->artist_name;
-        }
 
-        ///Update status to approved (1)
+        // Update status to approved
         $patient->patientsCQI->status = 1;
         $patient->patientsCQI->save();
 
-        // Generate PDFs using the prescription blades
-        $pdf1 = PDF::loadView('pdf/bactine', ['patient' => $patient]);
-        $pdf2 = PDF::loadView('pdf/lidocaine', ['patient' => $patient]);
-
-        // Create file paths
-        $file1 = storage_path("app/bactine_{$patient->id}.pdf");
-        $file2 = storage_path("app/lidocaine_{$patient->id}.pdf");
-
-        // Save the PDFs temporarily
-        $pdf1->save($file1);
-        $pdf2->save($file2);
-
-        // 4. Send the email with attachments
-        Mail::send('emails/patient_approved', ['patient' => $patient], function ($message) use ($patient, $artist, $file1, $file2) {
-            $message->to($patient->email)
-                ->subject('Your Medications Are Approved')
-                ->attach($file1, ['as' => 'Bactine.pdf'])
-                ->attach($file2, ['as' => 'Preparation H.pdf']);
-        });
+        // Dispatch emails as background jobs
+        \App\Jobs\SendPatientApprovalEmail::dispatch($patient->id);
 
         if ($patient->artist_id) {
-            Mail::send('emails/artist_approved', ['patient' => $patient, 'artist' => $artist], function ($message) use ($patient, $artist, $file1, $file2) {
-                $message->to($artist->email)
-                    ->subject('Your Medications Are Approved')
-                    ->attach($file1, ['as' => 'Bactine.pdf'])
-                    ->attach($file2, ['as' => 'Preparation H.pdf']);
-            });
+            \App\Jobs\SendArtistApprovalEmail::dispatch($patient->id, $patient->artist_id);
         }
-
-        // Optional: delete temp files after sending
-        unlink($file1);
-        unlink($file2);
 
         Session::flash('type', 'success');
         Session::flash('message', 'Patient approved.');
@@ -202,11 +168,8 @@ class DashboardController extends Controller
         // Reload relationships if needed
         $patient->load('patientsCQI', 'artist');
 
-        // Send email to patient
-        Mail::send('emails/patient_rejection', ['patient' => $patient], function ($message) use ($patient) {
-            $message->to($patient->email)
-                ->subject('Your Prescriptions Could Not Be Approved - DO NOT REPLY TO THIS EMAIL');
-        });
+        // Dispatch rejection email as background job
+        \App\Jobs\SendPatientRejectionEmail::dispatch($patient->id);
 
         return response()->json([
             'success' => true,
