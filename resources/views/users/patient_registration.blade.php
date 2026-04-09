@@ -698,8 +698,14 @@
             checkSubmitEnabled();
         });
 
-        // Intercept form submit → validate then open payment modal
+        // Intercept form submit → validate, then allow through
+        var formValidated = false;
         $('#cqiForm').on('submit', function(e) {
+            // If already validated, let the submission go through normally (includes files)
+            if (formValidated) {
+                return true;
+            }
+
             e.preventDefault();
 
             // 1. Age check
@@ -725,14 +731,15 @@
                 return;
             }
 
-            // 3. If any Yes — show medical warning modal (cannot proceed to payment)
+            // 3. If any Yes — show medical warning modal (cannot proceed)
             if (anyYesSelected()) {
                 $('#medicalWarningModal').modal('show');
                 return;
             }
 
-            // 4. All No — submit directly (payment temporarily disabled)
-            $('#cqiForm')[0].submit();
+            // 4. All No — set flag and re-trigger submit so files are included properly
+            formValidated = true;
+            $('#cqiForm').submit();
         });
 
         // "I Understand" closes warning modal — user stays on form to review answers
