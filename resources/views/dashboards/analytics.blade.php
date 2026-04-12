@@ -22,7 +22,7 @@
 
             <div class="card-body">
 
-                {{-- ── This Month Stats ── --}}
+                {{-- ── Top Stats (always visible) ── --}}
                 <h5 class="mb-3">This Month</h5>
                 <div class="row g-3 mb-4">
                     <div class="col-md-3">
@@ -59,105 +59,118 @@
                     </div>
                 </div>
 
-                {{-- ── Revenue Trend (always visible) ── --}}
-                <h5 class="mb-3">Revenue Trend — Last 12 Months</h5>
-                <div class="mb-4">
-                    <canvas id="revenueTrendChart" height="80"></canvas>
-                </div>
+                <hr>
 
-                {{-- ── Time of Day (collapsible) ── --}}
-                <div class="mb-2">
-                    <button class="btn btn-light w-100 text-start border d-flex justify-content-between align-items-center"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#sectionTimeOfDay"
-                            aria-expanded="false">
-                        <span>&#x1F552; Submission Time of Day</span>
-                        <span class="text-muted small">click to expand</span>
-                    </button>
-                    <div class="collapse" id="sectionTimeOfDay">
-                        <div class="mt-3 mb-2">
-                            <canvas id="timeOfDayChart" height="80"></canvas>
+                {{-- ── Sidebar + Content ── --}}
+                <div class="row">
+
+                    {{-- Sidebar --}}
+                    <div class="col-md-2">
+                        <div class="nav flex-column nav-pills" id="analyticsSidebar" role="tablist" aria-orientation="vertical">
+                            <button class="nav-link active text-start mb-1" id="tab-revenue" data-bs-toggle="pill"
+                                    data-bs-target="#pane-revenue" type="button" role="tab"
+                                    aria-controls="pane-revenue" aria-selected="true">
+                                &#x1F4B5; Revenue Trend
+                            </button>
+                            <button class="nav-link text-start mb-1" id="tab-tod" data-bs-toggle="pill"
+                                    data-bs-target="#pane-tod" type="button" role="tab"
+                                    aria-controls="pane-tod" aria-selected="false">
+                                &#x1F552; Time of Day
+                            </button>
+                            <button class="nav-link text-start mb-1" id="tab-geo" data-bs-toggle="pill"
+                                    data-bs-target="#pane-geo" type="button" role="tab"
+                                    aria-controls="pane-geo" aria-selected="false">
+                                &#x1F5FA; Geography
+                            </button>
+                            <button class="nav-link text-start mb-1" id="tab-return" data-bs-toggle="pill"
+                                    data-bs-target="#pane-return" type="button" role="tab"
+                                    aria-controls="pane-return" aria-selected="false">
+                                &#x1F504; Return Rate
+                            </button>
                         </div>
                     </div>
-                </div>
 
-                {{-- ── Patient Geography (collapsible) ── --}}
-                <div class="mb-2 mt-2">
-                    <button class="btn btn-light w-100 text-start border d-flex justify-content-between align-items-center"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#sectionGeography"
-                            aria-expanded="false">
-                        <span>&#x1F5FA; Patient Geography</span>
-                        <span class="text-muted small">click to expand</span>
-                    </button>
-                    <div class="collapse" id="sectionGeography">
-                        @if($cityBreakdown->isEmpty())
-                            <div class="text-muted mt-3">No data available.</div>
-                        @else
-                            <div class="mt-3" style="position: relative; height: {{ max(300, $cityBreakdown->count() * 28) }}px;">
-                                <canvas id="geographyChart"></canvas>
+                    {{-- Content panes --}}
+                    <div class="col-md-10">
+                        <div class="tab-content" id="analyticsContent">
+
+                            {{-- Revenue Trend --}}
+                            <div class="tab-pane fade show active" id="pane-revenue" role="tabpanel" aria-labelledby="tab-revenue">
+                                <h5 class="mb-3">Revenue Trend — Last 12 Months</h5>
+                                <canvas id="revenueTrendChart" height="80"></canvas>
                             </div>
-                        @endif
-                    </div>
-                </div>
 
-                {{-- ── Patient Return Rate (collapsible) ── --}}
-                <div class="mb-2 mt-2">
-                    <button class="btn btn-light w-100 text-start border d-flex justify-content-between align-items-center"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#sectionReturnRate"
-                            aria-expanded="false">
-                        <span>&#x1F504; Patient Return Rate</span>
-                        <span class="text-muted small">click to expand</span>
-                    </button>
-                    <div class="collapse" id="sectionReturnRate">
-                        <div class="row g-3 mt-2 mb-3">
-                            <div class="col-md-4">
-                                <div class="card text-center h-100">
-                                    <div class="card-body">
-                                        <div class="fs-2 fw-bold">{{ $returningCount }}</div>
-                                        <div class="text-muted">Unique Returning Patients</div>
+                            {{-- Time of Day --}}
+                            <div class="tab-pane fade" id="pane-tod" role="tabpanel" aria-labelledby="tab-tod">
+                                <h5 class="mb-3">Submission Time of Day (All Time)</h5>
+                                <canvas id="timeOfDayChart" height="80"></canvas>
+                            </div>
+
+                            {{-- Geography --}}
+                            <div class="tab-pane fade" id="pane-geo" role="tabpanel" aria-labelledby="tab-geo">
+                                <h5 class="mb-3">Patient Geography — All Time</h5>
+                                @if($cityBreakdown->isEmpty())
+                                    <div class="text-muted">No data available.</div>
+                                @else
+                                    <div style="position: relative; height: {{ max(300, $cityBreakdown->count() * 28) }}px;">
+                                        <canvas id="geographyChart"></canvas>
+                                    </div>
+                                @endif
+                            </div>
+
+                            {{-- Return Rate --}}
+                            <div class="tab-pane fade" id="pane-return" role="tabpanel" aria-labelledby="tab-return">
+                                <h5 class="mb-3">Patient Return Rate — All Time</h5>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-4">
+                                        <div class="card text-center h-100">
+                                            <div class="card-body">
+                                                <div class="fs-2 fw-bold">{{ $returningCount }}</div>
+                                                <div class="text-muted">Unique Returning Patients</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card text-center h-100">
+                                            <div class="card-body">
+                                                <div class="fs-2 fw-bold">{{ $avgDaysBetween }}</div>
+                                                <div class="text-muted">Avg Days Between 1st &amp; 2nd Submission</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card text-center h-100">
-                                    <div class="card-body">
-                                        <div class="fs-2 fw-bold">{{ $avgDaysBetween }}</div>
-                                        <div class="text-muted">Avg Days Between 1st &amp; 2nd Submission</div>
+
+                                @if(!empty($returningList))
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-bordered align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Email</th>
+                                                    <th>Submission Dates</th>
+                                                    <th>Days Between 1st &amp; 2nd</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($returningList as $r)
+                                                <tr>
+                                                    <td>{{ $r['name'] }}</td>
+                                                    <td>{{ $r['email'] }}</td>
+                                                    <td>{{ implode(', ', $r['submissions']) }}</td>
+                                                    <td>{{ $r['days'] }}</td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
                                     </div>
-                                </div>
+                                @else
+                                    <div class="text-muted">No returning patients found.</div>
+                                @endif
                             </div>
+
                         </div>
-
-                        @if(!empty($returningList))
-                            <div class="table-responsive">
-                                <table class="table table-striped table-bordered align-middle">
-                                    <thead>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Email</th>
-                                            <th>Submission Dates</th>
-                                            <th>Days Between 1st &amp; 2nd</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($returningList as $r)
-                                        <tr>
-                                            <td>{{ $r['name'] }}</td>
-                                            <td>{{ $r['email'] }}</td>
-                                            <td>{{ implode(', ', $r['submissions']) }}</td>
-                                            <td>{{ $r['days'] }}</td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        @else
-                            <div class="text-muted">No returning patients found.</div>
-                        @endif
                     </div>
-                </div>
+                </div>{{-- end sidebar/content row --}}
 
             </div>
         </div>
@@ -169,7 +182,7 @@
 @section('script')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-    // ── Revenue Trend ──────────────────────────────────────────────
+    // ── Revenue Trend — init immediately (default visible pane) ────
     new Chart(document.getElementById('revenueTrendChart'), {
         type: 'bar',
         data: {
@@ -194,9 +207,9 @@
         }
     });
 
-    // ── Time of Day (lazy — init on first expand) ──────────────────
+    // ── Time of Day — lazy init on first show ──────────────────────
     let todInitialized = false;
-    document.getElementById('sectionTimeOfDay').addEventListener('show.bs.collapse', function () {
+    document.getElementById('tab-tod').addEventListener('shown.bs.tab', function () {
         if (todInitialized) return;
         todInitialized = true;
         const hourLabels = Array.from({length: 24}, (_, i) => {
@@ -225,10 +238,10 @@
         });
     });
 
-    // ── Geography (lazy — init on first expand) ────────────────────
+    // ── Geography — lazy init on first show ────────────────────────
     @if(!$cityBreakdown->isEmpty())
     let geoInitialized = false;
-    document.getElementById('sectionGeography').addEventListener('show.bs.collapse', function () {
+    document.getElementById('tab-geo').addEventListener('shown.bs.tab', function () {
         if (geoInitialized) return;
         geoInitialized = true;
         new Chart(document.getElementById('geographyChart'), {
