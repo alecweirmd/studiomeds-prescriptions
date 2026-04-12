@@ -225,6 +225,7 @@ class DashboardController extends Controller
             abort(403);
         }
 
+        // ── This month stats ──────────────────────────────────────────
         $monthStart = now()->startOfMonth();
         $monthEnd   = now()->endOfMonth();
 
@@ -233,23 +234,74 @@ class DashboardController extends Controller
             ->whereNotNull('first_name')
             ->get();
 
-        $total    = $allThisMonth->count();
-        $approved = $allThisMonth->filter(fn($p) => $p->patientsCQI && $p->patientsCQI->status == 1)->count();
-        $rejected = $allThisMonth->filter(fn($p) => $p->patientsCQI && $p->patientsCQI->status == 2)->count();
+        $total         = $allThisMonth->count();
+        $approved      = $allThisMonth->filter(fn($p) => $p->patientsCQI && $p->patientsCQI->status == 1)->count();
+        $rejected      = $allThisMonth->filter(fn($p) => $p->patientsCQI && $p->patientsCQI->status == 2)->count();
+        $revenue       = $approved * 35.00;
+        $approvalRate  = $total > 0 ? round(($approved / $total) * 100, 1) : 0;
+        $rejectionRate = $total > 0 ? round(($rejected / $total) * 100, 1) : 0;
 
-        $revenue        = $approved * 35.00;
-        $approvalRate   = $total > 0 ? round(($approved / $total) * 100, 1) : 0;
-        $rejectionRate  = $total > 0 ? round(($rejected / $total) * 100, 1) : 0;
-
+        // ── City breakdown (all time) ─────────────────────────────────
         $cityBreakdown = Patients::whereNotNull('city')
             ->selectRaw('city, COUNT(*) as count')
             ->groupBy('city')
             ->orderByDesc('count')
             ->pluck('count', 'city');
 
+        // ── Revenue trend — last 12 months ────────────────────────────
+        $twelveMonthsAgo = now()->subMonths(11)->startOfMonth();
+        $approvedLast12  = Patients::with('patientsCQI')
+            ->where('created_at', '>=', $twelveMonthsAgo)
+            ->whereNotNull('first_name')
+            ->get()
+            ->filter(fn($p) => $p->patientsCQI && $p->patientsCQI->status == 1);
+
+        $revenueTrend = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $start = now()->subMonths($i)->startOfMonth();
+            $end   = $start->copy()->endOfMonth();
+            $cnt   = $approvedLast12->filter(
+                fn($p) => $p->created_at->gte($start) && $p->created_at->lte($end)
+            )->count();
+            $revenueTrend[] = ['label' => $start->format('M Y'), 'revenue' => $cnt * 35.00];
+        }
+
+        // ── Submission time of day (all time) ─────────────────────────
+        $hourCounts = array_fill(0, 24, 0);
+        foreach (Patients::whereNotNull('first_name')->pluck('created_at') as $ts) {
+            $hourCounts[$ts->hour]++;
+        }
+
+        // ── Returning patients (all time) ─────────────────────────────
+        $byEmail = Patients::whereNotNull('email')
+            ->whereNotNull('first_name')
+            ->get()
+            ->groupBy('email')
+            ->filter(fn($g) => $g->count() > 1);
+
+        $returningCount = $byEmail->count();
+        $totalDays      = 0;
+        $returningList  = [];
+
+        foreach ($byEmail as $email => $subs) {
+            $sorted = $subs->sortBy('created_at')->values();
+            $days   = (int) $sorted[0]->created_at->diffInDays($sorted[1]->created_at);
+            $totalDays += $days;
+            $returningList[] = [
+                'name'        => $sorted[0]->first_name . ' ' . $sorted[0]->last_name,
+                'email'       => $email,
+                'submissions' => $sorted->map(fn($s) => $s->created_at->format('m/d/Y'))->all(),
+                'days'        => $days,
+            ];
+        }
+
+        $avgDaysBetween = $returningCount > 0 ? round($totalDays / $returningCount, 1) : 0;
+
         return view('dashboards/analytics', compact(
             'total', 'approved', 'rejected', 'revenue',
-            'approvalRate', 'rejectionRate', 'cityBreakdown'
+            'approvalRate', 'rejectionRate', 'cityBreakdown',
+            'revenueTrend', 'hourCounts',
+            'returningCount', 'avgDaysBetween', 'returningList'
         ));
     }
 
