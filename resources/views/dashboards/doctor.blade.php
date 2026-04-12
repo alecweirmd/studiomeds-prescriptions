@@ -12,9 +12,6 @@
                     <a href="{{ url('/dashboard/analytics') }}" class="btn btn-secondary btn-sm">
                         &#x1F4CA; Analytics
                     </a>
-                    <a href="{{ url('/dashboard/flagged_submissions') }}" class="btn btn-danger btn-sm">
-                        &#9888; Flagged Submissions
-                    </a>
                 </div>
             </div>
 
@@ -42,6 +39,13 @@
                         </button>
                     </li>
                     @endforeach
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-flagged" data-bs-toggle="tab"
+                                data-bs-target="#content-flagged" type="button" role="tab"
+                                aria-controls="content-flagged" aria-selected="false">
+                            &#9888; Flagged
+                        </button>
+                    </li>
                 </ul>
 
                 <div class="tab-content p-3 border border-top-0" id="patientTabsContent">
@@ -256,6 +260,172 @@
 
                     </div>
                     @endforeach
+
+                    {{-- ── Flagged Submissions tab pane ── --}}
+                    <div class="tab-pane fade" id="content-flagged" role="tabpanel" aria-labelledby="tab-flagged">
+                        @php
+                            $fCurrent = $flaggedData['current'];
+                            $fArchive = $flaggedData['archive'];
+                        @endphp
+
+                        @if($fCurrent->isEmpty() && empty($fArchive))
+                            <div class="text-muted">No flagged submissions on record.</div>
+                        @else
+                            <p class="text-muted mb-3">
+                                These patients answered <strong>Yes</strong> to one or more medical screening questions,
+                                acknowledged the warning, then completed payment. A PDF audit record was saved for each.
+                            </p>
+
+                            {{-- Current month rows --}}
+                            @if($fCurrent->isNotEmpty())
+                            <div class="table-responsive">
+                                <table class="table table-striped table-bordered align-middle">
+                                    <thead class="table-danger">
+                                        <tr>
+                                            <th>Name</th><th>Email</th><th>IP Address</th>
+                                            <th>Acknowledged At</th><th>Triggered Questions</th>
+                                            <th>Submitted On</th><th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($fCurrent as $ack)
+                                        @php $patient = $ack->patient; @endphp
+                                        <tr>
+                                            <td>{{ $patient->first_name ?? '—' }} {{ $patient->last_name ?? '' }}</td>
+                                            <td>{{ $patient->email ?? '—' }}</td>
+                                            <td><code>{{ $ack->ip_address }}</code></td>
+                                            <td>{{ $ack->acknowledged_at->format('m/d/Y g:i A') }}</td>
+                                            <td>
+                                                @foreach($ack->triggered_questions as $q)
+                                                    <span class="badge bg-danger me-1">{{ $questionLabels[$q] ?? $q }}</span>
+                                                @endforeach
+                                            </td>
+                                            <td>{{ $patient ? $patient->created_at->format('m/d/Y') : '—' }}</td>
+                                            <td>
+                                                @if($patient)
+                                                <a href="{{ url('/users/submitted_cqi/' . $patient->id) }}" class="btn btn-sm btn-primary">View CQI</a>
+                                                @endif
+                                                @if($ack->pdf_path)
+                                                <a href="{{ url('/dashboard/flagged_pdf/' . $ack->id) }}" class="btn btn-sm btn-outline-danger">Download PDF</a>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            @endif
+
+                            {{-- Archive folders --}}
+                            @foreach($fArchive as $folder)
+                                @if($folder['type'] === 'month')
+                                    @php $folderId = 'arc_flagged_' . str_replace('-', '_', $folder['key']); @endphp
+                                    <div class="mt-1">
+                                        <button class="btn btn-light btn-sm w-100 text-start border"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#{{ $folderId }}"
+                                                aria-expanded="false">
+                                            &#x1F4C1; {{ $folder['label'] }} ({{ $folder['items']->count() }} {{ $folder['items']->count() === 1 ? 'submission' : 'submissions' }})
+                                        </button>
+                                        <div class="collapse" id="{{ $folderId }}">
+                                            <div class="table-responsive ms-3 mt-1">
+                                                <table class="table table-striped table-bordered table-sm align-middle">
+                                                    <thead class="table-danger">
+                                                        <tr><th>Name</th><th>Email</th><th>IP Address</th><th>Acknowledged At</th><th>Triggered Questions</th><th>Submitted On</th><th>Actions</th></tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($folder['items'] as $ack)
+                                                        @php $patient = $ack->patient; @endphp
+                                                        <tr>
+                                                            <td>{{ $patient->first_name ?? '—' }} {{ $patient->last_name ?? '' }}</td>
+                                                            <td>{{ $patient->email ?? '—' }}</td>
+                                                            <td><code>{{ $ack->ip_address }}</code></td>
+                                                            <td>{{ $ack->acknowledged_at->format('m/d/Y g:i A') }}</td>
+                                                            <td>
+                                                                @foreach($ack->triggered_questions as $q)
+                                                                    <span class="badge bg-danger me-1">{{ $questionLabels[$q] ?? $q }}</span>
+                                                                @endforeach
+                                                            </td>
+                                                            <td>{{ $patient ? $patient->created_at->format('m/d/Y') : '—' }}</td>
+                                                            <td>
+                                                                @if($patient)
+                                                                <a href="{{ url('/users/submitted_cqi/' . $patient->id) }}" class="btn btn-sm btn-primary">View CQI</a>
+                                                                @endif
+                                                                @if($ack->pdf_path)
+                                                                <a href="{{ url('/dashboard/flagged_pdf/' . $ack->id) }}" class="btn btn-sm btn-outline-danger">Download PDF</a>
+                                                                @endif
+                                                            </td>
+                                                        </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @else
+                                    @php $yearFolderId = 'arc_flagged_' . $folder['key']; @endphp
+                                    <div class="mt-1">
+                                        <button class="btn btn-secondary btn-sm w-100 text-start"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#{{ $yearFolderId }}"
+                                                aria-expanded="false">
+                                            &#x1F4C1; {{ $folder['label'] }} ({{ $folder['count'] }} {{ $folder['count'] === 1 ? 'submission' : 'submissions' }})
+                                        </button>
+                                        <div class="collapse" id="{{ $yearFolderId }}">
+                                            <div class="ms-3 mt-1">
+                                                @foreach($folder['months'] as $monthFolder)
+                                                    @php $mFolderId = 'arc_flagged_' . str_replace('-', '_', $monthFolder['key']); @endphp
+                                                    <div class="mt-1">
+                                                        <button class="btn btn-light btn-sm w-100 text-start border"
+                                                                data-bs-toggle="collapse"
+                                                                data-bs-target="#{{ $mFolderId }}"
+                                                                aria-expanded="false">
+                                                            &#x1F4C1; {{ $monthFolder['label'] }} ({{ $monthFolder['items']->count() }} {{ $monthFolder['items']->count() === 1 ? 'submission' : 'submissions' }})
+                                                        </button>
+                                                        <div class="collapse" id="{{ $mFolderId }}">
+                                                            <div class="table-responsive ms-3 mt-1">
+                                                                <table class="table table-striped table-bordered table-sm align-middle">
+                                                                    <thead class="table-danger">
+                                                                        <tr><th>Name</th><th>Email</th><th>IP Address</th><th>Acknowledged At</th><th>Triggered Questions</th><th>Submitted On</th><th>Actions</th></tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        @foreach($monthFolder['items'] as $ack)
+                                                                        @php $patient = $ack->patient; @endphp
+                                                                        <tr>
+                                                                            <td>{{ $patient->first_name ?? '—' }} {{ $patient->last_name ?? '' }}</td>
+                                                                            <td>{{ $patient->email ?? '—' }}</td>
+                                                                            <td><code>{{ $ack->ip_address }}</code></td>
+                                                                            <td>{{ $ack->acknowledged_at->format('m/d/Y g:i A') }}</td>
+                                                                            <td>
+                                                                                @foreach($ack->triggered_questions as $q)
+                                                                                    <span class="badge bg-danger me-1">{{ $questionLabels[$q] ?? $q }}</span>
+                                                                                @endforeach
+                                                                            </td>
+                                                                            <td>{{ $patient ? $patient->created_at->format('m/d/Y') : '—' }}</td>
+                                                                            <td>
+                                                                                @if($patient)
+                                                                                <a href="{{ url('/users/submitted_cqi/' . $patient->id) }}" class="btn btn-sm btn-primary">View CQI</a>
+                                                                                @endif
+                                                                                @if($ack->pdf_path)
+                                                                                <a href="{{ url('/dashboard/flagged_pdf/' . $ack->id) }}" class="btn btn-sm btn-outline-danger">Download PDF</a>
+                                                                                @endif
+                                                                            </td>
+                                                                        </tr>
+                                                                        @endforeach
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
+                        @endif
+                    </div>
+
                 </div>
             </div>
             <div class="card-footer">

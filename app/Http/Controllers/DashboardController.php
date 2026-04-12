@@ -98,6 +98,81 @@ class DashboardController extends Controller
 
             $data['archiveData'] = $archiveData;
 
+            // Flagged submissions with archiving
+            $data['questionLabels'] = [
+                'lidocaine'         => 'Q1: Allergic reaction to numbing creams/anesthetics',
+                'bactine'           => 'Q2: Allergic reaction to Bactine/antiseptics',
+                'broken_skin'       => 'Q3: Broken skin or open wounds',
+                'eczema'            => 'Q4: Severe eczema, psoriasis, or skin conditions',
+                'heart_rhythm'      => 'Q5: Heart rhythm problems',
+                'liver_disease'     => 'Q6: Severe liver disease',
+                'seizures'          => 'Q7: Seizures from medications/anesthetics',
+                'pregnant'          => 'Q8: Pregnant or breastfeeding',
+                'antiarrhythmic'    => 'Q9: Medications for irregular heartbeat',
+                'seizure_meds'      => 'Q10: Seizure/nerve pain medications',
+                'fainted'           => 'Q11: Fainted or severe reaction to anesthetics',
+                'methemoglobinemia' => 'Q12: Methemoglobinemia or blood oxygen disorder',
+            ];
+
+            $allFlagged = PatientAcknowledgement::with(['patient.patientsCQI'])
+                ->whereNotNull('patient_id')
+                ->whereNotNull('pdf_path')
+                ->latest('acknowledged_at')
+                ->get();
+
+            $currentFlagged  = $allFlagged->filter(fn($a) => $a->acknowledged_at->gte($currentMonthStart))->values();
+            $archivedFlagged = $allFlagged->filter(fn($a) => $a->acknowledged_at->lt($currentMonthStart));
+
+            $fMonthGroups = [];
+            $fYearGroups  = [];
+
+            foreach ($archivedFlagged as $ack) {
+                $year     = $ack->acknowledged_at->year;
+                $monthKey = $ack->acknowledged_at->format('Y-m');
+
+                if ($year === $currentYear) {
+                    if (!isset($fMonthGroups[$monthKey])) {
+                        $fMonthGroups[$monthKey] = ['label' => $ack->acknowledged_at->format('F Y'), 'items' => collect()];
+                    }
+                    $fMonthGroups[$monthKey]['items']->push($ack);
+                } else {
+                    if (!isset($fYearGroups[$year])) {
+                        $fYearGroups[$year] = ['months' => []];
+                    }
+                    if (!isset($fYearGroups[$year]['months'][$monthKey])) {
+                        $fYearGroups[$year]['months'][$monthKey] = ['label' => $ack->acknowledged_at->format('F Y'), 'items' => collect()];
+                    }
+                    $fYearGroups[$year]['months'][$monthKey]['items']->push($ack);
+                }
+            }
+
+            krsort($fMonthGroups);
+            krsort($fYearGroups);
+            foreach ($fYearGroups as &$fyg) {
+                krsort($fyg['months']);
+            }
+            unset($fyg);
+
+            $flaggedArchive = [];
+            foreach ($fMonthGroups as $key => $mg) {
+                $flaggedArchive[] = ['type' => 'month', 'key' => $key, 'label' => $mg['label'], 'items' => $mg['items']];
+            }
+            foreach ($fYearGroups as $year => $yg) {
+                $months = [];
+                foreach ($yg['months'] as $mKey => $mg) {
+                    $months[] = ['key' => $mKey, 'label' => $mg['label'], 'items' => $mg['items']];
+                }
+                $flaggedArchive[] = [
+                    'type'   => 'year',
+                    'key'    => 'year_' . $year,
+                    'label'  => (string) $year,
+                    'months' => $months,
+                    'count'  => array_sum(array_map(fn($m) => $m['items']->count(), $months)),
+                ];
+            }
+
+            $data['flaggedData'] = ['current' => $currentFlagged, 'archive' => $flaggedArchive];
+
             return view('dashboards/doctor', $data);
         } else {
 
@@ -309,36 +384,6 @@ class DashboardController extends Controller
     {
 
         return view('info/training');
-    }
-
-    public function flaggedSubmissions()
-    {
-        if (session()->get('user_type') != 1) {
-            abort(403);
-        }
-
-        $questionLabels = [
-            'lidocaine'         => 'Q1: Allergic reaction to numbing creams/anesthetics',
-            'bactine'           => 'Q2: Allergic reaction to Bactine/antiseptics',
-            'broken_skin'       => 'Q3: Broken skin or open wounds',
-            'eczema'            => 'Q4: Severe eczema, psoriasis, or skin conditions',
-            'heart_rhythm'      => 'Q5: Heart rhythm problems',
-            'liver_disease'     => 'Q6: Severe liver disease',
-            'seizures'          => 'Q7: Seizures from medications/anesthetics',
-            'pregnant'          => 'Q8: Pregnant or breastfeeding',
-            'antiarrhythmic'    => 'Q9: Medications for irregular heartbeat',
-            'seizure_meds'      => 'Q10: Seizure/nerve pain medications',
-            'fainted'           => 'Q11: Fainted or severe reaction to anesthetics',
-            'methemoglobinemia' => 'Q12: Methemoglobinemia or blood oxygen disorder',
-        ];
-
-        $flagged = PatientAcknowledgement::with(['patient.patientsCQI'])
-            ->whereNotNull('patient_id')
-            ->whereNotNull('pdf_path')
-            ->latest('acknowledged_at')
-            ->get();
-
-        return view('dashboards/flagged_submissions', compact('flagged', 'questionLabels'));
     }
 
     public function downloadFlaggedPdf($id)

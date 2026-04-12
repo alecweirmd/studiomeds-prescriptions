@@ -35,7 +35,6 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/dashboard/training', 'App\Http\Controllers\DashboardController@training');
     Route::post('/dashboard/reject_patient/{id}', 'App\Http\Controllers\DashboardController@rejectPatient');
     Route::get('/dashboard/approve_all_patients/', 'App\Http\Controllers\DashboardController@approveAllPatients');
-    Route::get('/dashboard/flagged_submissions', 'App\Http\Controllers\DashboardController@flaggedSubmissions');
     Route::get('/dashboard/analytics', 'App\Http\Controllers\DashboardController@analytics');
     Route::get('/dashboard/flagged_pdf/{id}', 'App\Http\Controllers\DashboardController@downloadFlaggedPdf');
 });
