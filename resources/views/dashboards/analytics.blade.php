@@ -8,14 +8,8 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h2 class="mb-0">Analytics</h2>
                 <div class="d-flex gap-2">
-                    <a href="https://analytics.google.com" target="_blank" class="btn btn-secondary btn-sm">
-                        &#x1F4CA; Google Analytics
-                    </a>
                     <a href="{{ url('/dashboard') }}" class="btn btn-primary btn-sm">
-                        &larr; Back to Dashboard
-                    </a>
-                    <a href="{{ url('/dashboard/flagged_submissions') }}" class="btn btn-danger btn-sm">
-                        &#9888; Flagged Submissions
+                        Clinical Dashboard
                     </a>
                 </div>
             </div>
@@ -87,6 +81,9 @@
                                     aria-controls="pane-return" aria-selected="false">
                                 &#x1F504; Return Rate
                             </button>
+                            <a href="https://analytics.google.com" target="_blank" class="nav-link text-start mb-1">
+                                &#x1F4CA; Google Analytics
+                            </a>
                         </div>
                     </div>
 
