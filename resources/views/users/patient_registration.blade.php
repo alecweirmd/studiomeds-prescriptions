@@ -677,6 +677,17 @@
             });
         }
 
+        // Prevent the year portion of the date input from exceeding 4 digits
+        $('#date_of_birth').on('change', function() {
+            const val = $(this).val(); // "YYYY-MM-DD"
+            if (!val) return;
+            const parts = val.split('-');
+            if (parts[0] && parts[0].length > 4) {
+                parts[0] = parts[0].slice(0, 4);
+                $(this).val(parts.join('-'));
+            }
+        });
+
         function calculateAge(dob) {
             if (!dob)
                 return null;

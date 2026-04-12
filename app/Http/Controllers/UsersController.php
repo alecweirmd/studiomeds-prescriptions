@@ -130,7 +130,7 @@ class UsersController extends Controller
         return $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'date_of_birth' => 'required|date|before:today',
+            'date_of_birth' => ['required', 'date_format:Y-m-d', 'before:today', 'regex:/^\d{4}-\d{2}-\d{2}$/'],
             'street_address' => 'required|string|max:255',
             'email' => 'required|email|unique:patients,email',
             'artist_name' => 'string|max:255',
@@ -237,7 +237,7 @@ class UsersController extends Controller
             'email'         => ['required', 'email'],
             'zip'           => ['required', 'regex:/^\d{5}(-\d{4})?$/'],
             'state'         => ['required', 'string', \Illuminate\Validation\Rule::in($validStates)],
-            'date_of_birth' => ['required', 'date', 'before_or_equal:' . now()->subYears(18)->toDateString()],
+            'date_of_birth' => ['required', 'date_format:Y-m-d', 'before_or_equal:' . now()->subYears(18)->toDateString(), 'after:1000-01-01', 'regex:/^\d{4}-\d{2}-\d{2}$/'],
         ], $medicalValidation), [
             'email.email'                   => 'Please enter a valid email address.',
             'zip.regex'                     => 'Please enter a valid US ZIP code (e.g. 12345 or 12345-6789).',
