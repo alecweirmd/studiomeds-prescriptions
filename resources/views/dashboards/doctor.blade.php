@@ -75,7 +75,25 @@
                                     <tbody>
                                         @foreach($group as $p)
                                         <tr>
-                                            <td>{{ $p->first_name }} {{ $p->last_name }}</td>
+                                            <td>
+                                                {{ $p->first_name }} {{ $p->last_name }}
+                                                @if(isset($patientAcknowledgements[$p->id]))
+                                                    @php
+                                                        $ack = $patientAcknowledgements[$p->id];
+                                                        $lines = ['<strong>Triggered Questions:</strong>'];
+                                                        foreach ($ack->triggered_questions as $q) {
+                                                            $lines[] = '&bull; ' . e($questionLabels[$q] ?? $q);
+                                                        }
+                                                        $lines[] = '';
+                                                        $lines[] = '<strong>I Understand:</strong> ' . ($ack->acknowledged_at ? 'Yes' : 'No');
+                                                    @endphp
+                                                    <span class="text-warning ms-1"
+                                                          data-bs-toggle="tooltip"
+                                                          data-bs-html="true"
+                                                          data-bs-placement="right"
+                                                          title="{{ implode('<br>', $lines) }}">&#9888;</span>
+                                                @endif
+                                            </td>
                                             <td>
                                                 @if($p->artist_id && $p->artist)
                                                 @if($p->artist->artist_name != NULL)
@@ -503,6 +521,10 @@
         $('.select2').select2();
         var base_url = $("body").data("base-url");
 
+        // Bootstrap tooltips for flagged-patient warning icons
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+            new bootstrap.Tooltip(el);
+        });
     });
 
     $(document).on('click', '.approve', function(e) {

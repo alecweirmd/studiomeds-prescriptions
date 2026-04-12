@@ -98,6 +98,12 @@ class DashboardController extends Controller
 
             $data['archiveData'] = $archiveData;
 
+            // Acknowledgement lookup for Pending tab tooltip (keyed by patient_id)
+            $data['patientAcknowledgements'] = PatientAcknowledgement::whereNotNull('patient_id')
+                ->latest('acknowledged_at')
+                ->get()
+                ->keyBy('patient_id');
+
             // Flagged submissions with archiving
             $data['questionLabels'] = [
                 'lidocaine'         => 'Q1: Allergic reaction to numbing creams/anesthetics',
