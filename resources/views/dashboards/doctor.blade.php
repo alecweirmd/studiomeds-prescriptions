@@ -148,7 +148,13 @@
                                         <tbody>
                                             @foreach($current as $p)
                                             <tr>
-                                                <td>{{ $p->first_name }} {{ $p->last_name }}</td>
+                                                <td>
+                                                    {{ $p->first_name }} {{ $p->last_name }}
+                                                    @if(isset($patientAcknowledgements[$p->id]))
+                                                        @php $ackW = $patientAcknowledgements[$p->id]; $linesW = ['<strong>Triggered Questions:</strong>']; foreach ($ackW->triggered_questions as $q) { $linesW[] = '&bull; ' . e($questionLabels[$q] ?? $q); } $linesW[] = ''; $linesW[] = '<strong>I Understand:</strong> ' . ($ackW->acknowledged_at ? 'Yes' : 'No'); @endphp
+                                                        <span class="text-warning ms-1" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="right" title="{{ implode('<br>', $linesW) }}">&#9888;</span>
+                                                    @endif
+                                                </td>
                                                 <td>
                                                     @if($p->artist_id && $p->artist)
                                                     @if($p->artist->artist_name != NULL)
@@ -192,7 +198,13 @@
                                                         <tbody>
                                                             @foreach($folder['patients'] as $p)
                                                             <tr>
-                                                                <td>{{ $p->first_name }} {{ $p->last_name }}</td>
+                                                                <td>
+                                                                    {{ $p->first_name }} {{ $p->last_name }}
+                                                                    @if(isset($patientAcknowledgements[$p->id]))
+                                                                        @php $ackW = $patientAcknowledgements[$p->id]; $linesW = ['<strong>Triggered Questions:</strong>']; foreach ($ackW->triggered_questions as $q) { $linesW[] = '&bull; ' . e($questionLabels[$q] ?? $q); } $linesW[] = ''; $linesW[] = '<strong>I Understand:</strong> ' . ($ackW->acknowledged_at ? 'Yes' : 'No'); @endphp
+                                                                        <span class="text-warning ms-1" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="right" title="{{ implode('<br>', $linesW) }}">&#9888;</span>
+                                                                    @endif
+                                                                </td>
                                                                 <td>
                                                                     @if($p->artist_id && $p->artist)
                                                                     @if($p->artist->artist_name != NULL)
@@ -244,7 +256,13 @@
                                                                         <tbody>
                                                                             @foreach($monthFolder['patients'] as $p)
                                                                             <tr>
-                                                                                <td>{{ $p->first_name }} {{ $p->last_name }}</td>
+                                                                                <td>
+                                                                                    {{ $p->first_name }} {{ $p->last_name }}
+                                                                                    @if(isset($patientAcknowledgements[$p->id]))
+                                                                                        @php $ackW = $patientAcknowledgements[$p->id]; $linesW = ['<strong>Triggered Questions:</strong>']; foreach ($ackW->triggered_questions as $q) { $linesW[] = '&bull; ' . e($questionLabels[$q] ?? $q); } $linesW[] = ''; $linesW[] = '<strong>I Understand:</strong> ' . ($ackW->acknowledged_at ? 'Yes' : 'No'); @endphp
+                                                                                        <span class="text-warning ms-1" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="right" title="{{ implode('<br>', $linesW) }}">&#9888;</span>
+                                                                                    @endif
+                                                                                </td>
                                                                                 <td>
                                                                                     @if($p->artist_id && $p->artist)
                                                                                     @if($p->artist->artist_name != NULL)
