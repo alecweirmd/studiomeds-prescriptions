@@ -147,6 +147,40 @@ class DashboardController extends Controller
     }
 
 
+    public function analytics()
+    {
+        if (session()->get('user_type') != 1) {
+            abort(403);
+        }
+
+        $monthStart = now()->startOfMonth();
+        $monthEnd   = now()->endOfMonth();
+
+        $allThisMonth = Patients::with('patientsCQI')
+            ->whereBetween('created_at', [$monthStart, $monthEnd])
+            ->whereNotNull('first_name')
+            ->get();
+
+        $total    = $allThisMonth->count();
+        $approved = $allThisMonth->filter(fn($p) => $p->patientsCQI && $p->patientsCQI->status == 1)->count();
+        $rejected = $allThisMonth->filter(fn($p) => $p->patientsCQI && $p->patientsCQI->status == 2)->count();
+
+        $revenue        = $approved * 35.00;
+        $approvalRate   = $total > 0 ? round(($approved / $total) * 100, 1) : 0;
+        $rejectionRate  = $total > 0 ? round(($rejected / $total) * 100, 1) : 0;
+
+        $cityBreakdown = Patients::whereNotNull('city')
+            ->selectRaw('city, COUNT(*) as count')
+            ->groupBy('city')
+            ->orderByDesc('count')
+            ->pluck('count', 'city');
+
+        return view('dashboards/analytics', compact(
+            'total', 'approved', 'rejected', 'revenue',
+            'approvalRate', 'rejectionRate', 'cityBreakdown'
+        ));
+    }
+
     public function training()
     {
 
