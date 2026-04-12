@@ -14,8 +14,8 @@ class StagingBasicAuth
             return $next($request);
         }
 
-        $username = env('STAGING_USERNAME');
-        $password = env('STAGING_PASSWORD');
+        $username = config('app.staging_username');
+        $password = config('app.staging_password');
 
         if (
             $request->getUser() !== $username ||
