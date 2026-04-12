@@ -134,7 +134,7 @@
 
                 <div class="py-2">
 <div class="py-2 mb-3">
-                        <label class=”form-label”>1. Have you ever had an allergic reaction to numbing creams or local anesthetics used by a dentist or doctor (such as lidocaine, benzocaine, or similar products)?</label>
+                        <label class=”form-label”>1. Have you ever had an allergic reaction to local anesthetics (lidocaine, benzocaine, or similar)?</label>
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input q-radio" type="radio" name="lidocaine" id="lidocaine_yes" value="1" {{ old('lidocaine') === '1' ? 'checked' : '' }} required>
@@ -149,7 +149,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">2. Have you ever had an allergic reaction to Bactine®, benzalkonium chloride, or other topical antiseptics?</label>
+                        <label class="form-label">2. Have you ever had an allergic reaction to Bactine or topical antiseptics?</label>
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input q-radio" type="radio" name="bactine" id="bactine_yes" value="1" {{ old('bactine') === '1' ? 'checked' : '' }}>
@@ -163,7 +163,7 @@
                     </div>
 
 <div class="mb-3">
-                        <label class="form-label">3. Do you currently have broken skin, open wounds, or skin infections at the area where the topical will be applied?</label>
+                        <label class="form-label">3. Do you currently have broken skin, open wounds, or skin infections where the topical will be applied?</label>
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input q-radio" type="radio" name="broken_skin" id="broken_skin_yes" value="1" {{ old('broken_skin') === '1' ? 'checked' : '' }}>
@@ -177,7 +177,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">4. Do you have a history of severe eczema, psoriasis, or other skin conditions at the area to be treated?</label>
+                        <label class="form-label">4. Do you have severe eczema, psoriasis, or other skin conditions where the topical will be applied?</label>
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input q-radio" type="radio" name="eczema" id="eczema_yes" value="1" {{ old('eczema') === '1' ? 'checked' : '' }}>
@@ -191,7 +191,7 @@
                     </div>
 
 <div class="mb-3">
-                        <label class="form-label">5. Do you have any heart rhythm problems (arrhythmias) or heart block?</label>
+                        <label class="form-label">5. Do you have a serious heart rhythm condition such as heart block, Wolff-Parkinson-White, or ventricular tachycardia? Occasional skipped beats or palpitations do not count.</label>
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input q-radio" type="radio" name="heart_rhythm" id="heart_rhythm_yes" value="1" {{ old('heart_rhythm') === '1' ? 'checked' : '' }}>
@@ -219,7 +219,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">7. Have you ever experienced seizures related to medications or anesthetics?</label>
+                        <label class="form-label">7. Have you ever had seizures caused by medications or anesthetics?</label>
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input q-radio" type="radio" name="seizures" id="seizures_yes" value="1" {{ old('seizures') === '1' ? 'checked' : '' }}>
@@ -247,7 +247,7 @@
                     </div>
 
 <div class="mb-3">
-                        <label class="form-label">9. Are you currently taking any medications for an irregular heartbeat (such as amiodarone, mexiletine, or quinidine)?</label>
+                        <label class="form-label">9. Are you taking prescription antiarrhythmic medications for a heart rhythm disorder (amiodarone, mexiletine, flecainide, or quinidine)? Blood pressure medications and beta blockers do not count.</label>
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input q-radio" type="radio" name="antiarrhythmic" id="antiarrhythmic_yes" value="1" {{ old('antiarrhythmic') === '1' ? 'checked' : '' }}>
@@ -261,7 +261,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">10. Are you currently taking any medications for seizures or nerve pain that your provider has warned may interact with anesthetics?</label>
+                        <label class="form-label">10. Are you taking medications for seizures or nerve pain that your provider has warned may interact with anesthetics?</label>
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input q-radio" type="radio" name="seizure_meds" id="seizure_meds_yes" value="1" {{ old('seizure_meds') === '1' ? 'checked' : '' }}>
@@ -275,7 +275,7 @@
                     </div>
 
 <div class="mb-3">
-                        <label class="form-label">11. Have you ever fainted, felt dizzy, or had a severe reaction when using local anesthetics before?</label>
+                        <label class="form-label">11. Have you ever had a severe reaction to local anesthetics (hives, difficulty breathing, seizures, or loss of consciousness)? Exclude normal nervousness or mild dizziness.</label>
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input q-radio" type="radio" name="fainted" id="fainted_yes" value="1" {{ old('fainted') === '1' ? 'checked' : '' }}>
@@ -289,7 +289,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">12. Have you ever been told you have a condition called methemoglobinemia, or a blood disorder affecting how your blood carries oxygen?</label>
+                        <label class="form-label">12. Have you ever been diagnosed with methemoglobinemia or a blood disorder affecting oxygen carrying capacity?</label>
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input q-radio" type="radio" name="methemoglobinemia" id="methemoglobinemia_yes" value="1" {{ old('methemoglobinemia') === '1' ? 'checked' : '' }}>
