@@ -8,7 +8,7 @@ Auth::routes();
 Route::get('logout', '\App\Http\Controllers\Auth\LoginController@logout');
 
 Route::get('/', function () {
-    return redirect()->route('login');
+    return redirect('/users/client_form');
 });
 
 Auth::routes(['register' => false, 'verify' => true]);
