@@ -10,12 +10,12 @@ class StagingBasicAuth
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (config('app.env') !== 'staging') {
+        if ($request->getHost() !== 'staging.prescriptions.studiomeds.com') {
             return $next($request);
         }
 
-        $username = config('app.staging_username');
-        $password = config('app.staging_password');
+        $username = env('STAGING_USERNAME');
+        $password = env('STAGING_PASSWORD');
 
         if (
             $request->getUser() !== $username ||
