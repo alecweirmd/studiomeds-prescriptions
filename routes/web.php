@@ -7,6 +7,19 @@ Auth::routes();
 
 Route::get('logout', '\App\Http\Controllers\Auth\LoginController@logout');
 
+Route::get('/sitemap.xml', function () {
+    $content = '<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://prescriptions.studiomeds.com/</loc>
+    </url>
+    <url>
+        <loc>https://prescriptions.studiomeds.com/users/client_form</loc>
+    </url>
+</urlset>';
+    return response($content, 200)->header('Content-Type', 'application/xml');
+});
+
 Route::get('/', function () {
     return redirect('/users/client_form');
 });
