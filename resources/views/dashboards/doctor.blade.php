@@ -51,55 +51,207 @@
                         role="tabpanel"
                         aria-labelledby="tab-{{ $status }}">
 
-                        @php
-                        $group = $patients[$status] ?? collect();
-                        @endphp
-
-                        @if($group->isEmpty())
-                        <div class="text-muted">No patients in this status.</div>
+                        @if($status == 0)
+                            {{-- ── Pending: unchanged ── --}}
+                            @php $group = $patients[$status] ?? collect(); @endphp
+                            @if($group->isEmpty())
+                            <div class="text-muted">No patients in this status.</div>
+                            @else
+                            <div class="table-responsive">
+                                <table class="table table-striped table-bordered align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Artist Name</th>
+                                            <th>CQI Status</th>
+                                            <th>Submitted On</th>
+                                            <th>Actions <span class="text-end"><a class="btn btn-sm btn-success approve_all">Approve All</a></span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($group as $p)
+                                        <tr>
+                                            <td>{{ $p->first_name }} {{ $p->last_name }}</td>
+                                            <td>
+                                                @if($p->artist_id && $p->artist)
+                                                @if($p->artist->artist_name != NULL)
+                                                <p>{{ $p->artist->artist_name }}</p>
+                                                @else
+                                                <p>{{ $p->artist->first_name }} {{ $p->artist->last_name }}</p>
+                                                @endif
+                                                @else
+                                                <p>{{ $p->artist_name }}</p>
+                                                @endif
+                                            </td>
+                                            <td>{{ $p->patientsCQI ? $statusLabels[$p->patientsCQI->status] : 'Pending' }}</td>
+                                            <td>{{ $p->created_at->format('m/d/Y') }}</td>
+                                            <td>
+                                                <a href="{{ url('/users/submitted_cqi/' . $p->id) }}" class="btn btn-sm btn-primary">View CQI</a>
+                                                @if($p->patientsCQI && $p->patientsCQI->status == 0)
+                                                <a class="btn btn-sm btn-success approve" data-id="{{ $p->id }}">Approve</a>
+                                                <a class="btn btn-sm btn-danger reject" data-id="{{ $p->id }}">Reject</a>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            @endif
                         @else
-                        <div class="table-responsive">
-                            <table class="table table-striped table-bordered align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Artist Name</th>
-                                        <th>CQI Status</th>
-                                        <th>Submitted On</th>
-                                        <th>Actions @if($status == 0)<span class="text-end"><a class="btn btn-sm btn-success approve_all">Approve All</a></span>@endif</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($group as $p)
-                                    <tr>
-                                        <td>{{ $p->first_name }} {{ $p->last_name }}</td>
-                                        <td>
-                                            @if($p->artist_id && $p->artist)
-                                            @if($p->artist->artist_name != NULL)
-                                            <p>{{ $p->artist->artist_name }}</p>
-                                            @else
-                                            <p>{{ $p->artist->first_name }} {{ $p->artist->last_name }}</p>
-                                            @endif
-                                            @else
-                                            <p>{{ $p->artist_name }}</p>
-                                            @endif
-                                        </td>
-                                        <td>{{ $p->patientsCQI ? $statusLabels[$p->patientsCQI->status] : 'Pending' }}</td>
-                                        <td>{{ $p->created_at->format('m/d/Y') }}</td>
-                                        <td>
-                                            <a href="{{ url('/users/submitted_cqi/' . $p->id) }}" class="btn btn-sm btn-primary">
-                                                View CQI
-                                            </a>
-                                            @if($p->patientsCQI && $p->patientsCQI->status == 0)
-                                            <a class="btn btn-sm btn-success approve" data-id="{{ $p->id }}">Approve</a>
-                                            <a class="btn btn-sm btn-danger reject" data-id="{{ $p->id }}">Reject</a>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+                            {{-- ── Approved / Rejected: with monthly/yearly archiving ── --}}
+                            @php
+                                $statusArchive = $archiveData[$status] ?? ['current' => collect(), 'archive' => []];
+                                $current = $statusArchive['current'];
+                                $archive = $statusArchive['archive'];
+                            @endphp
+
+                            @if($current->isEmpty() && empty($archive))
+                            <div class="text-muted">No patients in this status.</div>
+                            @else
+
+                                {{-- Current month rows --}}
+                                @if($current->isNotEmpty())
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-bordered align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Artist Name</th>
+                                                <th>CQI Status</th>
+                                                <th>Submitted On</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($current as $p)
+                                            <tr>
+                                                <td>{{ $p->first_name }} {{ $p->last_name }}</td>
+                                                <td>
+                                                    @if($p->artist_id && $p->artist)
+                                                    @if($p->artist->artist_name != NULL)
+                                                    <p>{{ $p->artist->artist_name }}</p>
+                                                    @else
+                                                    <p>{{ $p->artist->first_name }} {{ $p->artist->last_name }}</p>
+                                                    @endif
+                                                    @else
+                                                    <p>{{ $p->artist_name }}</p>
+                                                    @endif
+                                                </td>
+                                                <td>{{ $p->patientsCQI ? $statusLabels[$p->patientsCQI->status] : 'Pending' }}</td>
+                                                <td>{{ $p->created_at->format('m/d/Y') }}</td>
+                                                <td>
+                                                    <a href="{{ url('/users/submitted_cqi/' . $p->id) }}" class="btn btn-sm btn-primary">View CQI</a>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                @endif
+
+                                {{-- Archive folders --}}
+                                @foreach($archive as $folder)
+                                    @if($folder['type'] === 'month')
+                                        @php $folderId = 'arc_' . $status . '_' . str_replace('-', '_', $folder['key']); @endphp
+                                        <div class="mt-1">
+                                            <button class="btn btn-light btn-sm w-100 text-start border"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#{{ $folderId }}"
+                                                    aria-expanded="false">
+                                                &#x1F4C1; {{ $folder['label'] }} ({{ $folder['patients']->count() }} {{ $folder['patients']->count() === 1 ? 'patient' : 'patients' }})
+                                            </button>
+                                            <div class="collapse" id="{{ $folderId }}">
+                                                <div class="table-responsive ms-3 mt-1">
+                                                    <table class="table table-striped table-bordered table-sm align-middle">
+                                                        <thead>
+                                                            <tr><th>Name</th><th>Artist Name</th><th>CQI Status</th><th>Submitted On</th><th>Actions</th></tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach($folder['patients'] as $p)
+                                                            <tr>
+                                                                <td>{{ $p->first_name }} {{ $p->last_name }}</td>
+                                                                <td>
+                                                                    @if($p->artist_id && $p->artist)
+                                                                    @if($p->artist->artist_name != NULL)
+                                                                    <p>{{ $p->artist->artist_name }}</p>
+                                                                    @else
+                                                                    <p>{{ $p->artist->first_name }} {{ $p->artist->last_name }}</p>
+                                                                    @endif
+                                                                    @else
+                                                                    <p>{{ $p->artist_name }}</p>
+                                                                    @endif
+                                                                </td>
+                                                                <td>{{ $p->patientsCQI ? $statusLabels[$p->patientsCQI->status] : 'Pending' }}</td>
+                                                                <td>{{ $p->created_at->format('m/d/Y') }}</td>
+                                                                <td><a href="{{ url('/users/submitted_cqi/' . $p->id) }}" class="btn btn-sm btn-primary">View CQI</a></td>
+                                                            </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @else
+                                        {{-- Year folder --}}
+                                        @php $yearFolderId = 'arc_' . $status . '_' . $folder['key']; @endphp
+                                        <div class="mt-1">
+                                            <button class="btn btn-secondary btn-sm w-100 text-start"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#{{ $yearFolderId }}"
+                                                    aria-expanded="false">
+                                                &#x1F4C1; {{ $folder['label'] }} ({{ $folder['count'] }} {{ $folder['count'] === 1 ? 'patient' : 'patients' }})
+                                            </button>
+                                            <div class="collapse" id="{{ $yearFolderId }}">
+                                                <div class="ms-3 mt-1">
+                                                    @foreach($folder['months'] as $monthFolder)
+                                                        @php $mFolderId = 'arc_' . $status . '_' . str_replace('-', '_', $monthFolder['key']); @endphp
+                                                        <div class="mt-1">
+                                                            <button class="btn btn-light btn-sm w-100 text-start border"
+                                                                    data-bs-toggle="collapse"
+                                                                    data-bs-target="#{{ $mFolderId }}"
+                                                                    aria-expanded="false">
+                                                                &#x1F4C1; {{ $monthFolder['label'] }} ({{ $monthFolder['patients']->count() }} {{ $monthFolder['patients']->count() === 1 ? 'patient' : 'patients' }})
+                                                            </button>
+                                                            <div class="collapse" id="{{ $mFolderId }}">
+                                                                <div class="table-responsive ms-3 mt-1">
+                                                                    <table class="table table-striped table-bordered table-sm align-middle">
+                                                                        <thead>
+                                                                            <tr><th>Name</th><th>Artist Name</th><th>CQI Status</th><th>Submitted On</th><th>Actions</th></tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            @foreach($monthFolder['patients'] as $p)
+                                                                            <tr>
+                                                                                <td>{{ $p->first_name }} {{ $p->last_name }}</td>
+                                                                                <td>
+                                                                                    @if($p->artist_id && $p->artist)
+                                                                                    @if($p->artist->artist_name != NULL)
+                                                                                    <p>{{ $p->artist->artist_name }}</p>
+                                                                                    @else
+                                                                                    <p>{{ $p->artist->first_name }} {{ $p->artist->last_name }}</p>
+                                                                                    @endif
+                                                                                    @else
+                                                                                    <p>{{ $p->artist_name }}</p>
+                                                                                    @endif
+                                                                                </td>
+                                                                                <td>{{ $p->patientsCQI ? $statusLabels[$p->patientsCQI->status] : 'Pending' }}</td>
+                                                                                <td>{{ $p->created_at->format('m/d/Y') }}</td>
+                                                                                <td><a href="{{ url('/users/submitted_cqi/' . $p->id) }}" class="btn btn-sm btn-primary">View CQI</a></td>
+                                                                            </tr>
+                                                                            @endforeach
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endforeach
+
+                            @endif
                         @endif
 
                     </div>

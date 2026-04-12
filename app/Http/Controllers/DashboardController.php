@@ -20,11 +20,83 @@ class DashboardController extends Controller
 
         if (session()->get('user_type') == 1) {
 
-            $data['patients'] = Patients::with('patientsCQI')
+            $allPatients = Patients::with('patientsCQI')
                 ->get()
-                ->whereNotNull('first_name')
+                ->whereNotNull('first_name');
+
+            $data['patients'] = $allPatients
                 ->sortBy(fn($p) => $p->patientsCQI ? $p->patientsCQI->status : 0)
                 ->groupBy(fn($p) => $p->patientsCQI ? $p->patientsCQI->status : 0);
+
+            // Build archive structure for Approved (1) and Rejected (2) tabs
+            $archiveData = [];
+            $currentMonthStart = now()->startOfMonth();
+            $currentYear = now()->year;
+
+            foreach ([1, 2] as $status) {
+                $statusPatients = $allPatients
+                    ->filter(fn($p) => $p->patientsCQI && $p->patientsCQI->status == $status)
+                    ->sortByDesc('created_at');
+
+                $current = $statusPatients
+                    ->filter(fn($p) => $p->created_at->gte($currentMonthStart))
+                    ->values();
+
+                $archived = $statusPatients
+                    ->filter(fn($p) => $p->created_at->lt($currentMonthStart));
+
+                $monthGroups = [];
+                $yearGroups  = [];
+
+                foreach ($archived as $p) {
+                    $year     = $p->created_at->year;
+                    $monthKey = $p->created_at->format('Y-m');
+
+                    if ($year === $currentYear) {
+                        if (!isset($monthGroups[$monthKey])) {
+                            $monthGroups[$monthKey] = ['label' => $p->created_at->format('F Y'), 'patients' => collect()];
+                        }
+                        $monthGroups[$monthKey]['patients']->push($p);
+                    } else {
+                        if (!isset($yearGroups[$year])) {
+                            $yearGroups[$year] = ['months' => []];
+                        }
+                        if (!isset($yearGroups[$year]['months'][$monthKey])) {
+                            $yearGroups[$year]['months'][$monthKey] = ['label' => $p->created_at->format('F Y'), 'patients' => collect()];
+                        }
+                        $yearGroups[$year]['months'][$monthKey]['patients']->push($p);
+                    }
+                }
+
+                krsort($monthGroups);
+                krsort($yearGroups);
+                foreach ($yearGroups as &$yg) {
+                    krsort($yg['months']);
+                }
+                unset($yg);
+
+                $archive = [];
+                foreach ($monthGroups as $key => $mg) {
+                    $archive[] = ['type' => 'month', 'key' => $key, 'label' => $mg['label'], 'patients' => $mg['patients']];
+                }
+                foreach ($yearGroups as $year => $yg) {
+                    $months = [];
+                    foreach ($yg['months'] as $mKey => $mg) {
+                        $months[] = ['key' => $mKey, 'label' => $mg['label'], 'patients' => $mg['patients']];
+                    }
+                    $archive[] = [
+                        'type'   => 'year',
+                        'key'    => 'year_' . $year,
+                        'label'  => (string) $year,
+                        'months' => $months,
+                        'count'  => array_sum(array_map(fn($m) => $m['patients']->count(), $months)),
+                    ];
+                }
+
+                $archiveData[$status] = ['current' => $current, 'archive' => $archive];
+            }
+
+            $data['archiveData'] = $archiveData;
 
             return view('dashboards/doctor', $data);
         } else {
