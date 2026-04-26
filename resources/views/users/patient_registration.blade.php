@@ -10,7 +10,7 @@
 </span>
     </div>
 
-    <form method="post" id="cqiForm" enctype="multipart/form-data" action="{{ url('users/store_patient') }}">
+    <form method="post" id="cqiForm" enctype="multipart/form-data" action="{{ url('users/store_patient') }}" novalidate>
         <input type="hidden" name="patient_id" id="patient_id" value="{{ old('patient_id') }}">
         <input type="hidden" name="user_ip" id="user_ip" value="{{ old('user_ip') }}">
         @csrf
