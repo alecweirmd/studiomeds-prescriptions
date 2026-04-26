@@ -6,6 +6,7 @@ use App\Models\Patients;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class DiditController extends Controller
 {
@@ -74,10 +75,50 @@ class DiditController extends Controller
             if ($patient) {
                 $patient->verification_method = 'didit';
                 $patient->didit_session_id    = $sessionId;
+
+                $decision   = $payload['decision'] ?? [];
+                $idChecks   = $decision['id_verifications'] ?? [];
+                $liveness   = $decision['liveness_checks'] ?? [];
+
+                $frontUrl   = $idChecks[0]['front_image'] ?? null;
+                $backUrl    = $idChecks[0]['back_image'] ?? null;
+                $selfieUrl  = $liveness[0]['reference_image'] ?? null;
+
+                $baseDir    = "uploads/{$patient->id}/didit";
+
+                $frontPath  = $this->downloadDiditImage($frontUrl,  "{$baseDir}/front.jpg",  $patient->id, 'front');
+                $this->downloadDiditImage($backUrl, "{$baseDir}/back.jpg", $patient->id, 'back');
+                $selfiePath = $this->downloadDiditImage($selfieUrl, "{$baseDir}/selfie.jpg", $patient->id, 'selfie');
+
+                if ($frontPath)  { $patient->drivers_license = $frontPath; }
+                if ($selfiePath) { $patient->patient_photo   = $selfiePath; }
+
                 $patient->save();
             }
         }
 
         return response()->json(['ok' => true], 200);
+    }
+
+    private function downloadDiditImage(?string $url, string $storagePath, $patientId, string $label): ?string
+    {
+        if (!$url) {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(15)->get($url);
+
+            if (!$response->successful()) {
+                Log::error("Didit image download failed for patient {$patientId} ({$label}): HTTP " . $response->status());
+                return null;
+            }
+
+            Storage::disk('public')->put($storagePath, $response->body());
+            return $storagePath;
+        } catch (\Exception $e) {
+            Log::error("Didit image download exception for patient {$patientId} ({$label}): " . $e->getMessage());
+            return null;
+        }
     }
 }
