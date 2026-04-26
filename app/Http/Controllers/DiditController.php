@@ -53,14 +53,12 @@ class DiditController extends Controller
     public function webhook(Request $request)
     {
         $secret    = config('services.didit.webhook_secret');
-        $signature = $request->header('X-Signature-V2');
+        $signature = $request->header('X-Signature');
         $payload   = $request->all();
 
-        // Verify HMAC-SHA256 signature with sorted keys and unescaped Unicode
         if ($secret && $signature) {
-            ksort($payload);
-            $body         = json_encode($payload, JSON_UNESCAPED_UNICODE);
-            $expectedSig  = hash_hmac('sha256', $body, $secret);
+            $rawBody     = $request->getContent();
+            $expectedSig = hash_hmac('sha256', $rawBody, $secret);
             if (!hash_equals($expectedSig, $signature)) {
                 Log::warning('Didit webhook signature mismatch.');
                 return response()->json(['ok' => false], 200);

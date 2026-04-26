@@ -780,6 +780,7 @@
 
         var diditPollInterval = null;
         var diditPollStart    = null;
+        var diditActive       = false; // true only while the modal is open and polling
         var DIDIT_POLL_MS     = 3000;
         var DIDIT_TIMEOUT_MS  = 120000; // 2 minutes
 
@@ -790,15 +791,25 @@
             }
         }
 
+        // closeDiditModal: closes the modal and stops polling.
+        // Does NOT show post-verification — call showPostVerification() explicitly after
+        // this only when verification actually succeeded.
         function closeDiditModal() {
+            diditActive = false;
             stopPolling();
             $('#didit-modal-overlay').css('display', 'none');
             $('#didit-iframe').attr('src', '');
         }
 
         function startPolling(patientId) {
+            diditActive    = true;
             diditPollStart = Date.now();
             diditPollInterval = setInterval(function() {
+                // If modal was closed manually, diditActive is false — stop and do nothing
+                if (!diditActive) {
+                    stopPolling();
+                    return;
+                }
                 if (Date.now() - diditPollStart >= DIDIT_TIMEOUT_MS) {
                     closeDiditModal();
                     showManualFallback();
@@ -812,6 +823,8 @@
                         patient_id: patientId
                     },
                     success: function(resp) {
+                        // Guard against in-flight responses arriving after X was clicked
+                        if (!diditActive) { return; }
                         if (resp.verified) {
                             closeDiditModal();
                             $('#didit_verified').val('1');
