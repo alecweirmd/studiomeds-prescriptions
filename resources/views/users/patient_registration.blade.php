@@ -739,28 +739,27 @@
         });
 
         // ── Didit verify button gating ──────────────────────────────────────────
-        var diditGatedFields = [
-            'input[name="first_name"]',
-            'input[name="last_name"]',
-            'input[name="email"]',
-            'input[name="date_of_birth"]',
-            'input[name="street_address"]',
-            'input[name="city"]',
-            'input[name="zip"]'
-        ];
-
         function checkVerifyBtnReady() {
-            var allFilled = diditGatedFields.every(function(sel) {
-                return $(sel).val().trim() !== '';
-            });
-            // State uses a hidden input populated by the autocomplete
-            if ($('#state_value').val().trim() === '') { allFilled = false; }
+            var allFilled =
+                $('input[name="first_name"]').val().trim() !== '' &&
+                $('input[name="last_name"]').val().trim() !== '' &&
+                $('input[name="email"]').val().trim() !== '' &&
+                $('input[name="date_of_birth"]').val().trim() !== '' &&
+                $('input[name="street_address"]').val().trim() !== '' &&
+                $('input[name="city"]').val().trim() !== '' &&
+                $('input[name="zip"]').val().trim() !== '' &&
+                $('#state_value').val().trim() !== '';
             $('#didit-verify-btn').prop('disabled', !allFilled);
         }
 
-        $(diditGatedFields.join(',')).on('input change', checkVerifyBtnReady);
-        // state_value is set programmatically; watch the visible search input as proxy
-        $('#state_search').on('input change blur', checkVerifyBtnReady);
+        // Attach listeners to every typed field individually
+        $('input[name="first_name"], input[name="last_name"], input[name="email"], ' +
+          'input[name="date_of_birth"], input[name="street_address"], ' +
+          'input[name="city"], input[name="zip"]').on('input change', checkVerifyBtnReady);
+
+        // state_value is set programmatically by the autocomplete — jQuery events never
+        // fire on programmatic .value changes, so poll at 300ms as a reliable fallback.
+        setInterval(checkVerifyBtnReady, 300);
         // ── End Didit verify button gating ──────────────────────────────────────
 
         // ── Didit verification ──────────────────────────────────────────────────
