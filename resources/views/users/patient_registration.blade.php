@@ -797,6 +797,7 @@
 
         $('#didit-modal-close').on('click', function() {
             closeDiditModal();
+            showManualFallback();
         });
         // ── End Didit verification ───────────────────────────────────────────────
 
