@@ -41,6 +41,7 @@ Route::group(['middleware' => 'auth'], function () {
 
 Route::post('/ajax/record_acknowledgement', 'App\Http\Controllers\UsersController@recordAcknowledgement');
 Route::post('/ajax/didit-session', 'App\Http\Controllers\DiditController@createSession');
+Route::post('/ajax/didit-status', 'App\Http\Controllers\DiditController@checkStatus');
 Route::post('/webhook/didit', 'App\Http\Controllers\DiditController@webhook');
 
 Route::get('/register', 'App\Http\Controllers\UsersController@artist_register');

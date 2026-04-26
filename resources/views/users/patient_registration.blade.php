@@ -118,7 +118,7 @@
                     <h3>Identity Verification</h3>
                     <div class="col-12">
                         <p class="text-muted mb-2">We need to verify your identity before you continue. Click below to complete a quick ID check.</p>
-                        <button type="button" class="btn btn-primary" id="didit-verify-btn">Verify My Identity</button>
+                        <button type="button" class="btn btn-primary" id="didit-verify-btn" disabled>Verify My Identity</button>
                     </div>
 
                     {{-- Manual fallback uploads (hidden until Didit fails twice or AJAX error) --}}
@@ -738,6 +738,31 @@
             $(this).closest('.mb-3, .py-2').css({ 'outline': '', 'border-radius': '', 'padding': '' });
         });
 
+        // ── Didit verify button gating ──────────────────────────────────────────
+        var diditGatedFields = [
+            'input[name="first_name"]',
+            'input[name="last_name"]',
+            'input[name="email"]',
+            'input[name="date_of_birth"]',
+            'input[name="street_address"]',
+            'input[name="city"]',
+            'input[name="zip"]'
+        ];
+
+        function checkVerifyBtnReady() {
+            var allFilled = diditGatedFields.every(function(sel) {
+                return $(sel).val().trim() !== '';
+            });
+            // State uses a hidden input populated by the autocomplete
+            if ($('#state_value').val().trim() === '') { allFilled = false; }
+            $('#didit-verify-btn').prop('disabled', !allFilled);
+        }
+
+        $(diditGatedFields.join(',')).on('input change', checkVerifyBtnReady);
+        // state_value is set programmatically; watch the visible search input as proxy
+        $('#state_search').on('input change blur', checkVerifyBtnReady);
+        // ── End Didit verify button gating ──────────────────────────────────────
+
         // ── Didit verification ──────────────────────────────────────────────────
         var diditFailureCount = 0;
 
@@ -754,9 +779,49 @@
             showPostVerification();
         }
 
+        var diditPollInterval = null;
+        var diditPollStart    = null;
+        var DIDIT_POLL_MS     = 3000;
+        var DIDIT_TIMEOUT_MS  = 120000; // 2 minutes
+
+        function stopPolling() {
+            if (diditPollInterval) {
+                clearInterval(diditPollInterval);
+                diditPollInterval = null;
+            }
+        }
+
         function closeDiditModal() {
-            $('#didit-modal-overlay').hide().css('display', '');
+            stopPolling();
+            $('#didit-modal-overlay').css('display', 'none');
             $('#didit-iframe').attr('src', '');
+        }
+
+        function startPolling(patientId) {
+            diditPollStart = Date.now();
+            diditPollInterval = setInterval(function() {
+                if (Date.now() - diditPollStart >= DIDIT_TIMEOUT_MS) {
+                    closeDiditModal();
+                    showManualFallback();
+                    return;
+                }
+                $.ajax({
+                    url: '/ajax/didit-status',
+                    type: 'POST',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        patient_id: patientId
+                    },
+                    success: function(resp) {
+                        if (resp.verified) {
+                            closeDiditModal();
+                            $('#didit_verified').val('1');
+                            $('#didit-verify-btn').hide();
+                            showPostVerification();
+                        }
+                    }
+                });
+            }, DIDIT_POLL_MS);
         }
 
         $('#didit-verify-btn').on('click', function() {
@@ -776,6 +841,7 @@
                     if (resp.verification_url) {
                         $('#didit-iframe').attr('src', resp.verification_url);
                         $('#didit-modal-overlay').css('display', 'flex');
+                        startPolling(patientId);
                     } else {
                         showManualFallback();
                     }
@@ -788,25 +854,6 @@
 
         $('#didit-modal-close').on('click', function() {
             closeDiditModal();
-        });
-
-        window.addEventListener('message', function(event) {
-            if (event.origin !== 'https://verify.didit.me') { return; }
-            var data = event.data;
-            if (!data || data.type !== 'verification_complete') { return; }
-
-            if (data.status === 'Approved') {
-                closeDiditModal();
-                $('#didit_verified').val('1');
-                $('#didit-verify-btn').hide();
-                showPostVerification();
-            } else {
-                closeDiditModal();
-                diditFailureCount++;
-                if (diditFailureCount >= 2) {
-                    showManualFallback();
-                }
-            }
         });
         // ── End Didit verification ───────────────────────────────────────────────
 

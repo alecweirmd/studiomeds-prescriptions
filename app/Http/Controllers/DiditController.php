@@ -39,6 +39,17 @@ class DiditController extends Controller
         }
     }
 
+    public function checkStatus(Request $request)
+    {
+        $patient = Patients::find($request->input('patient_id'));
+
+        if ($patient && $patient->verification_method === 'didit') {
+            return response()->json(['verified' => true]);
+        }
+
+        return response()->json(['verified' => false]);
+    }
+
     public function webhook(Request $request)
     {
         $secret    = config('services.didit.webhook_secret');
