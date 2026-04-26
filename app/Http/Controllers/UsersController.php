@@ -138,8 +138,8 @@ class UsersController extends Controller
             'city' => 'required|string|max:255',
             'state' => 'required',
             'zip' => 'required|string|max:10',
-            'drivers_license' => 'required|image|max:10240',
-            'selfie_photo' => 'required|image|max:10240',
+            'drivers_license_image' => 'required|image|max:10240',
+            'selfie_image' => 'required|image|max:10240',
             // Allergies / Sensitivities
             'lidocaine' => 'required|boolean',
             'bactine' => 'required|boolean',
