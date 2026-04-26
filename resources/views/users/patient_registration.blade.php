@@ -95,16 +95,60 @@
 
                     <div class="col-md-3">
                         <label class="form-label">State</label>
-                        <div style="position:relative;">
-                            <input type="text" class="form-control" id="state_search"
-                                   placeholder="Type a state..."
-                                   value="{{ old('state') }}"
-                                   autocomplete="off">
-                            <input type="hidden" name="state" id="state_value" value="{{ old('state') }}" required>
-                            <ul id="state-dropdown"
-                                style="display:none;position:absolute;z-index:9999;width:100%;max-height:220px;overflow-y:auto;list-style:none;padding:0;margin:0;border:1px solid #ced4da;border-radius:0 0 4px 4px;background:#fff;box-shadow:0 4px 8px rgba(0,0,0,.1);">
-                            </ul>
-                        </div>
+                        <select name="state" id="state_value" class="form-select" required>
+                            <option value="">Select State</option>
+                            <option value="Alabama" {{ old('state') === 'Alabama' ? 'selected' : '' }}>Alabama</option>
+                            <option value="Alaska" {{ old('state') === 'Alaska' ? 'selected' : '' }}>Alaska</option>
+                            <option value="Arizona" {{ old('state') === 'Arizona' ? 'selected' : '' }}>Arizona</option>
+                            <option value="Arkansas" {{ old('state') === 'Arkansas' ? 'selected' : '' }}>Arkansas</option>
+                            <option value="California" {{ old('state') === 'California' ? 'selected' : '' }}>California</option>
+                            <option value="Colorado" {{ old('state') === 'Colorado' ? 'selected' : '' }}>Colorado</option>
+                            <option value="Connecticut" {{ old('state') === 'Connecticut' ? 'selected' : '' }}>Connecticut</option>
+                            <option value="Delaware" {{ old('state') === 'Delaware' ? 'selected' : '' }}>Delaware</option>
+                            <option value="District of Columbia" {{ old('state') === 'District of Columbia' ? 'selected' : '' }}>District of Columbia</option>
+                            <option value="Florida" {{ old('state') === 'Florida' ? 'selected' : '' }}>Florida</option>
+                            <option value="Georgia" {{ old('state') === 'Georgia' ? 'selected' : '' }}>Georgia</option>
+                            <option value="Hawaii" {{ old('state') === 'Hawaii' ? 'selected' : '' }}>Hawaii</option>
+                            <option value="Idaho" {{ old('state') === 'Idaho' ? 'selected' : '' }}>Idaho</option>
+                            <option value="Illinois" {{ old('state') === 'Illinois' ? 'selected' : '' }}>Illinois</option>
+                            <option value="Indiana" {{ old('state') === 'Indiana' ? 'selected' : '' }}>Indiana</option>
+                            <option value="Iowa" {{ old('state') === 'Iowa' ? 'selected' : '' }}>Iowa</option>
+                            <option value="Kansas" {{ old('state') === 'Kansas' ? 'selected' : '' }}>Kansas</option>
+                            <option value="Kentucky" {{ old('state') === 'Kentucky' ? 'selected' : '' }}>Kentucky</option>
+                            <option value="Louisiana" {{ old('state') === 'Louisiana' ? 'selected' : '' }}>Louisiana</option>
+                            <option value="Maine" {{ old('state') === 'Maine' ? 'selected' : '' }}>Maine</option>
+                            <option value="Maryland" {{ old('state') === 'Maryland' ? 'selected' : '' }}>Maryland</option>
+                            <option value="Massachusetts" {{ old('state') === 'Massachusetts' ? 'selected' : '' }}>Massachusetts</option>
+                            <option value="Michigan" {{ old('state') === 'Michigan' ? 'selected' : '' }}>Michigan</option>
+                            <option value="Minnesota" {{ old('state') === 'Minnesota' ? 'selected' : '' }}>Minnesota</option>
+                            <option value="Mississippi" {{ old('state') === 'Mississippi' ? 'selected' : '' }}>Mississippi</option>
+                            <option value="Missouri" {{ old('state') === 'Missouri' ? 'selected' : '' }}>Missouri</option>
+                            <option value="Montana" {{ old('state') === 'Montana' ? 'selected' : '' }}>Montana</option>
+                            <option value="Nebraska" {{ old('state') === 'Nebraska' ? 'selected' : '' }}>Nebraska</option>
+                            <option value="Nevada" {{ old('state') === 'Nevada' ? 'selected' : '' }}>Nevada</option>
+                            <option value="New Hampshire" {{ old('state') === 'New Hampshire' ? 'selected' : '' }}>New Hampshire</option>
+                            <option value="New Jersey" {{ old('state') === 'New Jersey' ? 'selected' : '' }}>New Jersey</option>
+                            <option value="New Mexico" {{ old('state') === 'New Mexico' ? 'selected' : '' }}>New Mexico</option>
+                            <option value="New York" {{ old('state') === 'New York' ? 'selected' : '' }}>New York</option>
+                            <option value="North Carolina" {{ old('state') === 'North Carolina' ? 'selected' : '' }}>North Carolina</option>
+                            <option value="North Dakota" {{ old('state') === 'North Dakota' ? 'selected' : '' }}>North Dakota</option>
+                            <option value="Ohio" {{ old('state') === 'Ohio' ? 'selected' : '' }}>Ohio</option>
+                            <option value="Oklahoma" {{ old('state') === 'Oklahoma' ? 'selected' : '' }}>Oklahoma</option>
+                            <option value="Oregon" {{ old('state') === 'Oregon' ? 'selected' : '' }}>Oregon</option>
+                            <option value="Pennsylvania" {{ old('state') === 'Pennsylvania' ? 'selected' : '' }}>Pennsylvania</option>
+                            <option value="Rhode Island" {{ old('state') === 'Rhode Island' ? 'selected' : '' }}>Rhode Island</option>
+                            <option value="South Carolina" {{ old('state') === 'South Carolina' ? 'selected' : '' }}>South Carolina</option>
+                            <option value="South Dakota" {{ old('state') === 'South Dakota' ? 'selected' : '' }}>South Dakota</option>
+                            <option value="Tennessee" {{ old('state') === 'Tennessee' ? 'selected' : '' }}>Tennessee</option>
+                            <option value="Texas" {{ old('state') === 'Texas' ? 'selected' : '' }}>Texas</option>
+                            <option value="Utah" {{ old('state') === 'Utah' ? 'selected' : '' }}>Utah</option>
+                            <option value="Vermont" {{ old('state') === 'Vermont' ? 'selected' : '' }}>Vermont</option>
+                            <option value="Virginia" {{ old('state') === 'Virginia' ? 'selected' : '' }}>Virginia</option>
+                            <option value="Washington" {{ old('state') === 'Washington' ? 'selected' : '' }}>Washington</option>
+                            <option value="West Virginia" {{ old('state') === 'West Virginia' ? 'selected' : '' }}>West Virginia</option>
+                            <option value="Wisconsin" {{ old('state') === 'Wisconsin' ? 'selected' : '' }}>Wisconsin</option>
+                            <option value="Wyoming" {{ old('state') === 'Wyoming' ? 'selected' : '' }}>Wyoming</option>
+                        </select>
                     </div>
 
                     <div class="col-md-3">
@@ -581,121 +625,6 @@
         });
 
 
-        // State autocomplete
-        const US_STATES = [
-            'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut',
-            'Delaware','District of Columbia','Florida','Georgia','Hawaii','Idaho','Illinois',
-            'Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts',
-            'Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada',
-            'New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota',
-            'Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina',
-            'South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington',
-            'West Virginia','Wisconsin','Wyoming'
-        ];
-
-        (function() {
-            const searchInput = document.getElementById('state_search');
-            const hiddenInput = document.getElementById('state_value');
-            const dropdown    = document.getElementById('state-dropdown');
-            let activeIndex   = -1;
-
-            function renderDropdown(matches) {
-                dropdown.innerHTML = '';
-                activeIndex = -1;
-                if (matches.length === 0) { dropdown.style.display = 'none'; return; }
-                matches.forEach(function(state, i) {
-                    const li = document.createElement('li');
-                    li.textContent = state;
-                    li.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:14px;';
-                    li.addEventListener('mouseenter', function() { setActive(i); });
-                    li.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        selectState(state);
-                    });
-                    li.addEventListener('touchstart', function(e) {
-                        e.preventDefault();
-                        selectState(state);
-                    }, { passive: false });
-                    dropdown.appendChild(li);
-                });
-                dropdown.style.display = 'block';
-            }
-
-            function setActive(i) {
-                const items = dropdown.querySelectorAll('li');
-                items.forEach(function(el) { el.style.background = ''; el.style.color = ''; });
-                activeIndex = i;
-                if (items[i]) {
-                    items[i].style.background = '#0d6efd';
-                    items[i].style.color = '#fff';
-                    items[i].scrollIntoView({ block: 'nearest' });
-                }
-            }
-
-            function selectState(state) {
-                searchInput.value = state;
-                hiddenInput.value = state;
-                dropdown.style.display = 'none';
-                activeIndex = -1;
-            }
-
-            searchInput.addEventListener('input', function() {
-                const q = this.value.trim().toLowerCase();
-                hiddenInput.value = '';
-                if (!q) { dropdown.style.display = 'none'; return; }
-                const matches = US_STATES.filter(function(s) {
-                    return s.toLowerCase().startsWith(q);
-                });
-                renderDropdown(matches);
-            });
-
-            searchInput.addEventListener('blur', function() {
-                setTimeout(function() {
-                    const typed = searchInput.value.trim();
-                    const valid = US_STATES.find(function(s) {
-                        return s.toLowerCase() === typed.toLowerCase();
-                    });
-                    if (!valid) {
-                        searchInput.value = '';
-                        hiddenInput.value = '';
-                        searchInput.classList.add('is-invalid');
-                    } else {
-                        selectState(valid);
-                        searchInput.classList.remove('is-invalid');
-                    }
-                    dropdown.style.display = 'none';
-                }, 150);
-            });
-
-            searchInput.addEventListener('input', function() {
-                searchInput.classList.remove('is-invalid');
-            });
-
-            searchInput.addEventListener('keydown', function(e) {
-                const items = dropdown.querySelectorAll('li');
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    setActive(Math.min(activeIndex + 1, items.length - 1));
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    setActive(Math.max(activeIndex - 1, 0));
-                } else if (e.key === 'Enter') {
-                    if (activeIndex >= 0 && items[activeIndex]) {
-                        e.preventDefault();
-                        selectState(items[activeIndex].textContent);
-                    }
-                } else if (e.key === 'Escape') {
-                    dropdown.style.display = 'none';
-                }
-            });
-
-            document.addEventListener('click', function(e) {
-                if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
-                    dropdown.style.display = 'none';
-                }
-            });
-        })();
-
         const medicalFields = ['lidocaine','bactine','broken_skin','eczema','heart_rhythm','liver_disease','seizures','pregnant','antiarrhythmic','seizure_meds','fainted','methemoglobinemia'];
 
         function anyYesSelected() {
@@ -752,14 +681,13 @@
             $('#didit-verify-btn').prop('disabled', !allFilled);
         }
 
-        // Attach listeners to every typed field individually
+        // Attach listeners to every field
         $('input[name="first_name"], input[name="last_name"], input[name="email"], ' +
           'input[name="date_of_birth"], input[name="street_address"], ' +
           'input[name="city"], input[name="zip"]').on('input change', checkVerifyBtnReady);
 
-        // state_value is set programmatically by the autocomplete — jQuery events never
-        // fire on programmatic .value changes, so poll at 300ms as a reliable fallback.
-        setInterval(checkVerifyBtnReady, 300);
+        // State is now a native select — fires change events directly
+        $('#state_value').on('change', checkVerifyBtnReady);
         // ── End Didit verify button gating ──────────────────────────────────────
 
         // ── Didit verification ──────────────────────────────────────────────────
