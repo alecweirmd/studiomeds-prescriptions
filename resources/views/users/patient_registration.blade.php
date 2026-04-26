@@ -167,7 +167,10 @@
 
                     {{-- Manual fallback uploads (hidden until Didit fails twice or AJAX error) --}}
                     <div id="manual-fallback-section" style="display:none;">
-                        <p class="text-info fw-semibold mt-3">Let’s verify your identity another way.</p>
+                        <div class="alert alert-info border border-info mt-3 p-4" style="border-width:2px !important;">
+                            <h5 class="alert-heading mb-1">&#128274; Please Complete Identity Verification Below</h5>
+                            <p class="mb-0">To continue, upload a photo of your government-issued ID and a selfie. Both are required before you can proceed.</p>
+                        </div>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label">Driver’s License</label>
