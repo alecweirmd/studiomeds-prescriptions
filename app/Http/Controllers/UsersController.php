@@ -138,8 +138,8 @@ class UsersController extends Controller
             'city' => 'required|string|max:255',
             'state' => 'required',
             'zip' => 'required|string|max:10',
-            'drivers_license_image' => 'required|image|max:10240',
-            'selfie_image' => 'required|image|max:10240',
+            'drivers_license_image' => 'nullable|image|max:10240',
+            'selfie_image' => 'nullable|image|max:10240',
             // Allergies / Sensitivities
             'lidocaine' => 'required|boolean',
             'bactine' => 'required|boolean',
@@ -233,16 +233,23 @@ class UsersController extends Controller
             $medicalValidation[$field] = 'required|in:0,1';
         }
 
+        $diditVerified = (int) $request->input('didit_verified', 0);
+        $imageRule = $diditVerified === 1 ? 'nullable|image|max:10240' : 'required|image|max:10240';
+
         $request->validate(array_merge([
-            'email'         => ['required', 'email'],
-            'zip'           => ['required', 'regex:/^\d{5}(-\d{4})?$/'],
-            'state'         => ['required', 'string', \Illuminate\Validation\Rule::in($validStates)],
-            'date_of_birth' => ['required', 'date_format:Y-m-d', 'before_or_equal:' . now()->subYears(18)->toDateString(), 'after:1000-01-01', 'regex:/^\d{4}-\d{2}-\d{2}$/'],
+            'email'                 => ['required', 'email'],
+            'zip'                   => ['required', 'regex:/^\d{5}(-\d{4})?$/'],
+            'state'                 => ['required', 'string', \Illuminate\Validation\Rule::in($validStates)],
+            'date_of_birth'         => ['required', 'date_format:Y-m-d', 'before_or_equal:' . now()->subYears(18)->toDateString(), 'after:1000-01-01', 'regex:/^\d{4}-\d{2}-\d{2}$/'],
+            'drivers_license_image' => $imageRule,
+            'selfie_image'          => $imageRule,
         ], $medicalValidation), [
-            'email.email'                   => 'Please enter a valid email address.',
-            'zip.regex'                     => 'Please enter a valid US ZIP code (e.g. 12345 or 12345-6789).',
-            'state.in'                      => 'Please select a valid US state from the list.',
-            'date_of_birth.before_or_equal' => 'You must be 18 or older to submit this form.',
+            'email.email'                        => 'Please enter a valid email address.',
+            'zip.regex'                          => 'Please enter a valid US ZIP code (e.g. 12345 or 12345-6789).',
+            'state.in'                           => 'Please select a valid US state from the list.',
+            'date_of_birth.before_or_equal'      => 'You must be 18 or older to submit this form.',
+            'drivers_license_image.required'     => 'Please upload a photo of your driver\'s license.',
+            'selfie_image.required'              => 'Please upload a selfie photo.',
         ]);
 
         // Block submission if any medical question was answered Yes
@@ -358,6 +365,12 @@ class UsersController extends Controller
             $answers->fainted = $request->fainted;
             $answers->methemoglobinemia = $request->methemoglobinemia;
             $answers->save();
+
+            // If Didit webhook has not already set verification_method, the patient used manual upload
+            if (!$patient->verification_method) {
+                $patient->verification_method = 'manual_fallback';
+                $patient->save();
+            }
 
             // If this patient acknowledged the medical warning, generate a flagged submission PDF
             $acknowledgement = PatientAcknowledgement::where('patient_id', $patient->id)->latest()->first();

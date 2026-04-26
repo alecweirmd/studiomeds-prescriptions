@@ -14,6 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\StagingBasicAuth::class,
         ]);
+        $middleware->validateCsrfTokens(except: [
+            '/webhook/didit',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

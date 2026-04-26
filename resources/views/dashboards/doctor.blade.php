@@ -77,6 +77,11 @@
                                         <tr>
                                             <td>
                                                 {{ $p->first_name }} {{ $p->last_name }}
+                                                @if($p->verification_method === 'didit')
+                                                    <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
+                                                @elseif($p->verification_method === 'manual_fallback')
+                                                    <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                @endif
                                                 @if(isset($patientAcknowledgements[$p->id]))
                                                     @php
                                                         $ack = $patientAcknowledgements[$p->id];
@@ -150,6 +155,11 @@
                                             <tr>
                                                 <td>
                                                     {{ $p->first_name }} {{ $p->last_name }}
+                                                    @if($p->verification_method === 'didit')
+                                                        <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
+                                                    @elseif($p->verification_method === 'manual_fallback')
+                                                        <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                    @endif
                                                     @if(isset($patientAcknowledgements[$p->id]))
                                                         @php $ackW = $patientAcknowledgements[$p->id]; $linesW = ['<strong>Triggered Questions:</strong>']; foreach ($ackW->triggered_questions as $q) { $linesW[] = '&bull; ' . e($questionLabels[$q] ?? $q); } $linesW[] = ''; $linesW[] = '<strong>I Understand:</strong> ' . ($ackW->acknowledged_at ? 'Yes' : 'No'); @endphp
                                                         <span class="text-danger ms-1" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="right" title="{{ implode('<br>', $linesW) }}">&#9888;</span>
@@ -200,6 +210,11 @@
                                                             <tr>
                                                                 <td>
                                                                     {{ $p->first_name }} {{ $p->last_name }}
+                                                                    @if($p->verification_method === 'didit')
+                                                                        <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
+                                                                    @elseif($p->verification_method === 'manual_fallback')
+                                                                        <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                                    @endif
                                                                     @if(isset($patientAcknowledgements[$p->id]))
                                                                         @php $ackW = $patientAcknowledgements[$p->id]; $linesW = ['<strong>Triggered Questions:</strong>']; foreach ($ackW->triggered_questions as $q) { $linesW[] = '&bull; ' . e($questionLabels[$q] ?? $q); } $linesW[] = ''; $linesW[] = '<strong>I Understand:</strong> ' . ($ackW->acknowledged_at ? 'Yes' : 'No'); @endphp
                                                                         <span class="text-danger ms-1" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="right" title="{{ implode('<br>', $linesW) }}">&#9888;</span>
@@ -258,6 +273,11 @@
                                                                             <tr>
                                                                                 <td>
                                                                                     {{ $p->first_name }} {{ $p->last_name }}
+                                                                                    @if($p->verification_method === 'didit')
+                                                                                        <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
+                                                                                    @elseif($p->verification_method === 'manual_fallback')
+                                                                                        <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                                                    @endif
                                                                                     @if(isset($patientAcknowledgements[$p->id]))
                                                                                         @php $ackW = $patientAcknowledgements[$p->id]; $linesW = ['<strong>Triggered Questions:</strong>']; foreach ($ackW->triggered_questions as $q) { $linesW[] = '&bull; ' . e($questionLabels[$q] ?? $q); } $linesW[] = ''; $linesW[] = '<strong>I Understand:</strong> ' . ($ackW->acknowledged_at ? 'Yes' : 'No'); @endphp
                                                                                         <span class="text-danger ms-1" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="right" title="{{ implode('<br>', $linesW) }}">&#9888;</span>
@@ -327,7 +347,13 @@
                                         @foreach($fCurrent as $ack)
                                         @php $patient = $ack->patient; @endphp
                                         <tr>
-                                            <td>{{ $patient->first_name ?? '—' }} {{ $patient->last_name ?? '' }}</td>
+                                            <td>{{ $patient->first_name ?? '—' }} {{ $patient->last_name ?? '' }}
+                                                @if($patient && $patient->verification_method === 'didit')
+                                                    <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
+                                                @elseif($patient && $patient->verification_method === 'manual_fallback')
+                                                    <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                @endif
+                                            </td>
                                             <td>{{ $patient->email ?? '—' }}</td>
                                             <td><code>{{ $ack->ip_address }}</code></td>
                                             <td>{{ $ack->acknowledged_at->format('m/d/Y g:i A') }}</td>
@@ -373,7 +399,13 @@
                                                         @foreach($folder['items'] as $ack)
                                                         @php $patient = $ack->patient; @endphp
                                                         <tr>
-                                                            <td>{{ $patient->first_name ?? '—' }} {{ $patient->last_name ?? '' }}</td>
+                                                            <td>{{ $patient->first_name ?? '—' }} {{ $patient->last_name ?? '' }}
+                                                @if($patient && $patient->verification_method === 'didit')
+                                                    <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
+                                                @elseif($patient && $patient->verification_method === 'manual_fallback')
+                                                    <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                @endif
+                                            </td>
                                                             <td>{{ $patient->email ?? '—' }}</td>
                                                             <td><code>{{ $ack->ip_address }}</code></td>
                                                             <td>{{ $ack->acknowledged_at->format('m/d/Y g:i A') }}</td>
@@ -428,7 +460,13 @@
                                                                         @foreach($monthFolder['items'] as $ack)
                                                                         @php $patient = $ack->patient; @endphp
                                                                         <tr>
-                                                                            <td>{{ $patient->first_name ?? '—' }} {{ $patient->last_name ?? '' }}</td>
+                                                                            <td>{{ $patient->first_name ?? '—' }} {{ $patient->last_name ?? '' }}
+                                                @if($patient && $patient->verification_method === 'didit')
+                                                    <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
+                                                @elseif($patient && $patient->verification_method === 'manual_fallback')
+                                                    <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                @endif
+                                            </td>
                                                                             <td>{{ $patient->email ?? '—' }}</td>
                                                                             <td><code>{{ $ack->ip_address }}</code></td>
                                                                             <td>{{ $ack->acknowledged_at->format('m/d/Y g:i A') }}</td>

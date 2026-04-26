@@ -47,4 +47,9 @@ return [
         'signature_key' => env('AUTHORIZE_SIGNATURE_KEY'),
         'env' => env('AUTHORIZE_ENV', 'sandbox'),
     ],
+    'didit' => [
+        'api_key'        => env('DIDIT_API_KEY'),
+        'workflow_id'    => env('DIDIT_WORKFLOW_ID'),
+        'webhook_secret' => env('DIDIT_WEBHOOK_SECRET'),
+    ],
 ];

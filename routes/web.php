@@ -40,6 +40,8 @@ Route::group(['middleware' => 'auth'], function () {
 });
 
 Route::post('/ajax/record_acknowledgement', 'App\Http\Controllers\UsersController@recordAcknowledgement');
+Route::post('/ajax/didit-session', 'App\Http\Controllers\DiditController@createSession');
+Route::post('/webhook/didit', 'App\Http\Controllers\DiditController@webhook');
 
 Route::get('/register', 'App\Http\Controllers\UsersController@artist_register');
 Route::post('users/store_artist', 'App\Http\Controllers\UsersController@store_artist');

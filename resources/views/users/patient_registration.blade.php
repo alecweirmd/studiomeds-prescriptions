@@ -113,22 +113,53 @@
                     </div>
                 </div>
 
-                {{-- FILE UPLOADS --}}
-                <div class="row g-3 p-2">
-                    <div class="col-md-6">
-                        <label class="form-label">Driver’s License</label>
-                        <small class="text-muted d-block mb-1">Take a photo or upload from your gallery.</small>
-                        <input type="file" name="drivers_license_image" class="form-control"
-                               accept="image/*" required>
+                {{-- IDENTITY VERIFICATION --}}
+                <div class="row g-3 p-2" id="verification-section">
+                    <h3>Identity Verification</h3>
+                    <div class="col-12">
+                        <p class="text-muted mb-2">We need to verify your identity before you continue. Click below to complete a quick ID check.</p>
+                        <button type="button" class="btn btn-primary" id="didit-verify-btn">Verify My Identity</button>
                     </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Selfie</label>
-                        <small class="text-muted d-block mb-1">Take a selfie or upload a photo of yourself.</small>
-                        <input type="file" name="selfie_image" class="form-control"
-                               accept="image/*" required>
+                    {{-- Manual fallback uploads (hidden until Didit fails twice or AJAX error) --}}
+                    <div id="manual-fallback-section" style="display:none;">
+                        <p class="text-info fw-semibold mt-3">Let’s verify your identity another way.</p>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Driver’s License</label>
+                                <small class="text-muted d-block mb-1">Take a photo or upload from your gallery.</small>
+                                <input type="file" name="drivers_license_image" id="drivers_license_image"
+                                       class="form-control" accept="image/*">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Selfie</label>
+                                <small class="text-muted d-block mb-1">Take a selfie or upload a photo of yourself.</small>
+                                <input type="file" name="selfie_image" id="selfie_image"
+                                       class="form-control" accept="image/*">
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="didit_verified" id="didit_verified" value="0">
+                </div>
+
+                {{-- Didit iframe modal overlay --}}
+                <div id="didit-modal-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center;">
+                    <div style="background:#fff;border-radius:8px;width:90%;max-width:520px;height:80vh;display:flex;flex-direction:column;overflow:hidden;position:relative;">
+                        <div style="padding:12px 16px;border-bottom:1px solid #dee2e6;display:flex;justify-content:space-between;align-items:center;">
+                            <strong>Identity Verification</strong>
+                            <button type="button" id="didit-modal-close" style="background:none;border:none;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
+                        </div>
+                        <iframe id="didit-iframe"
+                                src=""
+                                style="flex:1;border:none;width:100%;"
+                                allow="camera; microphone; fullscreen; autoplay; encrypted-media">
+                        </iframe>
                     </div>
                 </div>
+
+                {{-- Everything below verification is hidden until verification is complete --}}
+                <div id="post-verification-section" style="display:none;">
 
                 <h3>Medical Screening Questions</h3>
 
@@ -302,11 +333,13 @@
                         </div>
                     </div>
                 </div>
+
+                </div>{{-- end post-verification-section --}}
             </div>
 
         </div>
 
-        <div class="card-footer text-start">
+        <div class="card-footer text-start" id="submit-footer" style="display:none;">
             <button type="submit" class="btn btn-primary btn-lg submit" id="submitBtn">
                 <i class="fas fa-save"></i> Submit
             </button>
@@ -704,6 +737,78 @@
         $('.q-radio').on('change', function() {
             $(this).closest('.mb-3, .py-2').css({ 'outline': '', 'border-radius': '', 'padding': '' });
         });
+
+        // ── Didit verification ──────────────────────────────────────────────────
+        var diditFailureCount = 0;
+
+        function showPostVerification() {
+            $('#post-verification-section').show();
+            $('#submit-footer').show();
+        }
+
+        function showManualFallback() {
+            $('#didit-verify-btn').hide();
+            $('#manual-fallback-section').show();
+            $('#drivers_license_image').prop('required', true);
+            $('#selfie_image').prop('required', true);
+            showPostVerification();
+        }
+
+        function closeDiditModal() {
+            $('#didit-modal-overlay').hide().css('display', '');
+            $('#didit-iframe').attr('src', '');
+        }
+
+        $('#didit-verify-btn').on('click', function() {
+            var patientId = $('#patient_id').val();
+            if (!patientId) {
+                alert('Please agree to the terms first to start your session.');
+                return;
+            }
+            $.ajax({
+                url: '/ajax/didit-session',
+                type: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content'),
+                    patient_id: patientId
+                },
+                success: function(resp) {
+                    if (resp.verification_url) {
+                        $('#didit-iframe').attr('src', resp.verification_url);
+                        $('#didit-modal-overlay').css('display', 'flex');
+                    } else {
+                        showManualFallback();
+                    }
+                },
+                error: function() {
+                    showManualFallback();
+                }
+            });
+        });
+
+        $('#didit-modal-close').on('click', function() {
+            closeDiditModal();
+        });
+
+        window.addEventListener('message', function(event) {
+            if (event.origin !== 'https://verify.didit.me') { return; }
+            var data = event.data;
+            if (!data || data.type !== 'verification_complete') { return; }
+
+            if (data.status === 'Approved') {
+                closeDiditModal();
+                $('#didit_verified').val('1');
+                $('#didit-verify-btn').hide();
+                showPostVerification();
+            } else {
+                closeDiditModal();
+                diditFailureCount++;
+                if (diditFailureCount >= 2) {
+                    showManualFallback();
+                }
+            }
+        });
+        // ── End Didit verification ───────────────────────────────────────────────
 
         // Validate on submit — only preventDefault when something actually fails
         var paymentReady = false;
