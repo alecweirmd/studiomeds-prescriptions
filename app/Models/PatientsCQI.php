@@ -24,6 +24,15 @@ class PatientsCQI extends Model
         'seizure_meds',
         'fainted',
         'methemoglobinemia',
+        'follow_up_sent_at',
+        'reengagement_sent_at',
+        'review_sent_at',
+    ];
+
+    protected $casts = [
+        'follow_up_sent_at'    => 'datetime',
+        'reengagement_sent_at' => 'datetime',
+        'review_sent_at'       => 'datetime',
     ];
 
     public function patient()

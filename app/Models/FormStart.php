@@ -13,11 +13,13 @@ class FormStart extends Model
         'completed',
         'patient_id',
         'abandoned_at',
+        'contacted_at',
     ];
 
     protected $casts = [
         'started_at'   => 'datetime',
         'abandoned_at' => 'datetime',
+        'contacted_at' => 'datetime',
         'completed'    => 'boolean',
     ];
 

@@ -113,12 +113,13 @@
                                         $abandonedBody = 'Hi, thank you for visiting StudioMeds. We noticed you started an evaluation but were not able to complete it. If you had any questions or ran into any issues, we are happy to help. Feel free to reply to this email or reach out at admin@studiomeds.com. We look forward to helping you.';
                                     @endphp
                                     <div class="table-responsive">
-                                        <table class="table table-striped table-bordered align-middle">
+                                        <table class="table table-striped table-bordered align-middle" id="abandonedIntakesTable">
                                             <thead>
                                                 <tr>
                                                     <th>Email</th>
                                                     <th>Date Started</th>
                                                     <th>Days Ago</th>
+                                                    <th>Action</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -128,15 +129,22 @@
                                                             . '?subject=' . rawurlencode($abandonedSubject)
                                                             . '&body=' . rawurlencode($abandonedBody);
                                                     @endphp
-                                                    <tr>
+                                                    <tr data-intake-id="{{ $intake->id }}">
                                                         <td><a href="{{ $mailto }}">{{ $intake->email }}</a></td>
                                                         <td>{{ $intake->started_at->format('m/d/Y g:i A') }}</td>
                                                         <td>{{ (int) $intake->started_at->diffInDays(now()) }}</td>
+                                                        <td>
+                                                            <button type="button" class="btn btn-sm btn-outline-success mark-contacted-btn"
+                                                                    data-intake-id="{{ $intake->id }}">
+                                                                Mark as Contacted
+                                                            </button>
+                                                        </td>
                                                     </tr>
                                                 @endforeach
                                             </tbody>
                                         </table>
                                     </div>
+                                    <div id="abandonedEmptyMsg" class="text-muted" style="display:none;">No abandoned intakes found.</div>
                                 @endif
                             </div>
 
@@ -221,6 +229,39 @@
 
 @section('script')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Mark abandoned intake as contacted (AJAX, no reload)
+    $(document).on('click', '.mark-contacted-btn', function() {
+        var $btn = $(this);
+        var intakeId = $btn.data('intake-id');
+        $btn.prop('disabled', true).text('Saving...');
+        $.ajax({
+            url: '/dashboard/abandoned-intake/' + intakeId + '/contact',
+            type: 'POST',
+            data: { _token: $('meta[name="csrf-token"]').attr('content') },
+            dataType: 'json',
+            success: function(resp) {
+                if (resp && resp.success) {
+                    var $row = $('#abandonedIntakesTable tbody tr[data-intake-id="' + intakeId + '"]');
+                    $row.fadeOut(200, function() {
+                        $row.remove();
+                        if ($('#abandonedIntakesTable tbody tr').length === 0) {
+                            $('#abandonedIntakesTable').hide();
+                            $('#abandonedEmptyMsg').show();
+                        }
+                    });
+                } else {
+                    $btn.prop('disabled', false).text('Mark as Contacted');
+                    alert('Could not mark as contacted. Please try again.');
+                }
+            },
+            error: function() {
+                $btn.prop('disabled', false).text('Mark as Contacted');
+                alert('Could not mark as contacted. Please try again.');
+            }
+        });
+    });
+</script>
 <script>
     // ── Revenue Trend — init immediately (default visible pane) ────
     new Chart(document.getElementById('revenueTrendChart'), {

@@ -393,8 +393,22 @@ class DashboardController extends Controller
     public function abandonedIntakes()
     {
         return FormStart::whereNotNull('abandoned_at')
+            ->whereNull('contacted_at')
             ->orderByDesc('started_at')
             ->get();
+    }
+
+    public function markAbandonedContacted($id)
+    {
+        if (session()->get('user_type') != 1) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $intake = FormStart::findOrFail($id);
+        $intake->contacted_at = now();
+        $intake->save();
+
+        return response()->json(['success' => true, 'id' => $intake->id]);
     }
 
     public function training()
