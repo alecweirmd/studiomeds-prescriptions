@@ -1,6 +1,30 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    .step-indicator { max-width: 640px; margin: 0 auto; }
+    .step-indicator .step { display: flex; flex-direction: column; align-items: center; flex: 0 0 auto; min-width: 90px; }
+    .step-indicator .step-circle {
+        width: 32px; height: 32px; border-radius: 50%;
+        background: #e9ecef; color: #adb5bd;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 600; font-size: 0.9rem; line-height: 1;
+        transition: background-color 0.2s, color 0.2s;
+    }
+    .step-indicator .step-label {
+        font-size: 0.8rem; color: #adb5bd; margin-top: 0.4rem;
+        text-align: center; transition: color 0.2s;
+    }
+    .step-indicator .step-line {
+        flex: 1 1 auto; height: 2px; background: #e9ecef;
+        margin: 15px 0.5rem 0; transition: background-color 0.2s;
+    }
+    .step-indicator .step.active .step-circle { background: #1a9cd8; color: #fff; }
+    .step-indicator .step.active .step-label { color: #1a9cd8; font-weight: 600; }
+    .step-indicator .step.completed .step-circle { background: #adb5bd; color: #fff; }
+    .step-indicator .step.completed .step-label { color: #6c757d; }
+    .step-indicator .step-line.completed { background: #1a9cd8; }
+</style>
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="mb-0">Medical Intake & Prescription Evaluation</h3>
@@ -19,6 +43,23 @@
         <div class=" container py-4">
 
             <div class="card-body">
+                <div id="stepIndicator" class="step-indicator d-flex align-items-start justify-content-between mb-4">
+                    <div class="step active" data-step="1">
+                        <div class="step-circle">1</div>
+                        <div class="step-label">Demographics &amp; ID</div>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step" data-step="2">
+                        <div class="step-circle">2</div>
+                        <div class="step-label">Medical Questions</div>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step" data-step="3">
+                        <div class="step-circle">3</div>
+                        <div class="step-label">Payment</div>
+                    </div>
+                </div>
+
                 @if ($errors->any())
                 <div class="alert alert-danger">
                     <strong>Please fix the following:</strong>
@@ -564,6 +605,31 @@
 @section('script')
 <script>
     $(document).ready(function() {
+        // Step indicator helper — purely visual, no impact on form logic
+        function setStep(n) {
+            $('#stepIndicator .step').each(function() {
+                var step = parseInt($(this).attr('data-step'), 10);
+                $(this).removeClass('active completed');
+                var $circle = $(this).find('.step-circle');
+                if (step < n) {
+                    $(this).addClass('completed');
+                    $circle.html('&#10003;');
+                } else if (step === n) {
+                    $(this).addClass('active');
+                    $circle.text(step);
+                } else {
+                    $circle.text(step);
+                }
+            });
+            $('#stepIndicator .step-line').each(function(i) {
+                if (i < n - 1) { $(this).addClass('completed'); }
+                else { $(this).removeClass('completed'); }
+            });
+        }
+        window.__setStep = setStep;
+
+        $('#paymentModal').on('show.bs.modal', function() { setStep(3); });
+
         $('#contactHelpBtn').on('click', function() {
             var emailOpened = false;
             $(window).one('blur', function() { emailOpened = true; });
@@ -716,6 +782,7 @@
         function showPostVerification() {
             $('#post-verification-section').show();
             $('#submit-footer').show();
+            if (typeof setStep === 'function') { setStep(2); }
         }
 
         function showManualFallback() {
