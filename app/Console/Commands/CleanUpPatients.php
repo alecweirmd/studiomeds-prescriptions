@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 use App\Models\Patients;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class CleanUpPatients extends Command
 {
@@ -27,7 +28,7 @@ class CleanUpPatients extends Command
     public function handle()
     {
         //
-        $patients = Patients::whereNull('first_name')->delete(); 
-
+        $deleted = Patients::whereNull('first_name')->where('created_at', '<', now()->subHours(2))->delete();
+        Log::info('patients:cleanup deleted ' . $deleted . ' orphaned patient rows');
     }
 }
