@@ -450,7 +450,7 @@
 
         <div class="card-footer text-start" id="submit-footer" style="display:none;">
             <button type="submit" class="btn btn-primary btn-lg submit" id="submitBtn">
-                <i class="fas fa-save"></i> Submit
+                <i class="fas fa-check-circle"></i> Complete My Evaluation
             </button>
         </div>
 
