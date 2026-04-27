@@ -8,3 +8,8 @@ Schedule::command('patients:cleanup')
     ->dailyAt('02:00')
     ->withoutOverlapping()
     ->onOneServer();
+
+Schedule::command('intakes:mark-abandoned')
+    ->dailyAt('00:00')
+    ->withoutOverlapping()
+    ->onOneServer();

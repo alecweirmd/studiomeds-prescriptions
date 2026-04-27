@@ -595,6 +595,23 @@
                 document.getElementById('user_ip').value = data.ip;
             });
 
+        $('#email').on('blur', function() {
+            var email = $(this).val().trim();
+            var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return;
+            }
+            $.ajax({
+                url: '/ajax/track-form-start',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    email: email,
+                    ip_address: $('#user_ip').val()
+                }
+            });
+        });
+
         $('#terms_agree_check').on('change', function() {
 
             if ($(this).is(':checked')) {

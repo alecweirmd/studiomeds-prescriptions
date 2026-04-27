@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use App\Services\AuthorizeNetService;
 use App\Models\PatientAcknowledgement;
+use App\Models\FormStart;
 use Barryvdh\DomPDF\Facade\Pdf;
 use net\authorize\api\contract\v1 as AnetAPI;
 use net\authorize\api\controller as AnetController;
@@ -404,6 +405,13 @@ class UsersController extends Controller
                 }
             }
 
+            $formStart = FormStart::where('email', $patient->email)->first();
+            if ($formStart) {
+                $formStart->completed = true;
+                $formStart->patient_id = $patient->id;
+                $formStart->save();
+            }
+
             $emailmessage = "New Submission:" . $patient->first_name . ' ' . $patient->last_name;
 
             \App\Jobs\SendAdminNotificationEmail::dispatch($emailmessage, $patient->id);
@@ -454,6 +462,34 @@ class UsersController extends Controller
         $patient->save();
 
         return $patient->id;
+    }
+
+    public function trackFormStart(Request $request)
+    {
+        $email = $request->input('email');
+
+        if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return response('OK', 200);
+        }
+
+        $existing = FormStart::where('email', $email)
+            ->where('completed', false)
+            ->first();
+
+        if ($existing) {
+            $existing->started_at = now();
+            $existing->ip_address = $request->input('ip_address') ?: $request->ip();
+            $existing->save();
+        } else {
+            FormStart::create([
+                'email'      => $email,
+                'ip_address' => $request->input('ip_address') ?: $request->ip(),
+                'started_at' => now(),
+                'completed'  => false,
+            ]);
+        }
+
+        return response('OK', 200);
     }
 
     public function recordAcknowledgement(Request $request)

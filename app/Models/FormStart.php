@@ -1,0 +1,28 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class FormStart extends Model
+{
+    protected $fillable = [
+        'email',
+        'ip_address',
+        'started_at',
+        'completed',
+        'patient_id',
+        'abandoned_at',
+    ];
+
+    protected $casts = [
+        'started_at'   => 'datetime',
+        'abandoned_at' => 'datetime',
+        'completed'    => 'boolean',
+    ];
+
+    public function patient()
+    {
+        return $this->belongsTo(Patients::class, 'patient_id');
+    }
+}

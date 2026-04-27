@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\PatientsCQI;
 use App\Models\Patients;
 use App\Models\PatientAcknowledgement;
+use App\Models\FormStart;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
@@ -378,12 +379,22 @@ class DashboardController extends Controller
 
         $avgDaysBetween = $returningCount > 0 ? round($totalDays / $returningCount, 1) : 0;
 
+        $abandonedIntakes = $this->abandonedIntakes();
+
         return view('dashboards/analytics', compact(
             'total', 'approved', 'rejected', 'revenue',
             'approvalRate', 'rejectionRate', 'cityBreakdown',
             'revenueTrend', 'hourCounts',
-            'returningCount', 'avgDaysBetween', 'returningList'
+            'returningCount', 'avgDaysBetween', 'returningList',
+            'abandonedIntakes'
         ));
+    }
+
+    public function abandonedIntakes()
+    {
+        return FormStart::whereNotNull('abandoned_at')
+            ->orderByDesc('started_at')
+            ->get();
     }
 
     public function training()

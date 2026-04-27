@@ -66,6 +66,11 @@
                                     aria-controls="pane-revenue" aria-selected="true">
                                 &#x1F4B5; Revenue Trend
                             </button>
+                            <button class="nav-link text-start mb-1" id="tab-abandoned" data-bs-toggle="pill"
+                                    data-bs-target="#pane-abandoned" type="button" role="tab"
+                                    aria-controls="pane-abandoned" aria-selected="false">
+                                &#x1F4E4; Abandoned Intakes
+                            </button>
                             <button class="nav-link text-start mb-1" id="tab-tod" data-bs-toggle="pill"
                                     data-bs-target="#pane-tod" type="button" role="tab"
                                     aria-controls="pane-tod" aria-selected="false">
@@ -95,6 +100,44 @@
                             <div class="tab-pane fade show active" id="pane-revenue" role="tabpanel" aria-labelledby="tab-revenue">
                                 <h5 class="mb-3">Revenue Trend — Last 12 Months</h5>
                                 <canvas id="revenueTrendChart" height="80"></canvas>
+                            </div>
+
+                            {{-- Abandoned Intakes --}}
+                            <div class="tab-pane fade" id="pane-abandoned" role="tabpanel" aria-labelledby="tab-abandoned">
+                                <h5 class="mb-3">Abandoned Intakes</h5>
+                                @if($abandonedIntakes->isEmpty())
+                                    <div class="text-muted">No abandoned intakes found.</div>
+                                @else
+                                    @php
+                                        $abandonedSubject = 'We noticed you started a StudioMeds evaluation';
+                                        $abandonedBody = 'Hi, thank you for visiting StudioMeds. We noticed you started an evaluation but were not able to complete it. If you had any questions or ran into any issues, we are happy to help. Feel free to reply to this email or reach out at admin@studiomeds.com. We look forward to helping you.';
+                                    @endphp
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-bordered align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th>Email</th>
+                                                    <th>Date Started</th>
+                                                    <th>Days Ago</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($abandonedIntakes as $intake)
+                                                    @php
+                                                        $mailto = 'mailto:' . rawurlencode($intake->email)
+                                                            . '?subject=' . rawurlencode($abandonedSubject)
+                                                            . '&body=' . rawurlencode($abandonedBody);
+                                                    @endphp
+                                                    <tr>
+                                                        <td><a href="{{ $mailto }}">{{ $intake->email }}</a></td>
+                                                        <td>{{ $intake->started_at->format('m/d/Y g:i A') }}</td>
+                                                        <td>{{ (int) $intake->started_at->diffInDays(now()) }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @endif
                             </div>
 
                             {{-- Time of Day --}}
