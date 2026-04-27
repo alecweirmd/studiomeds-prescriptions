@@ -642,9 +642,7 @@
                 window.removeEventListener('scroll', onScroll);
                 setTimeout(function() { $hint.remove(); }, 400);
             };
-            var onScroll = function() {
-                if ((window.scrollY || window.pageYOffset || 0) > 5) { hide(); }
-            };
+            var onScroll = function() { hide(); };
             window.addEventListener('scroll', onScroll, { passive: true });
         })();
 
@@ -839,8 +837,34 @@
         var diditPollInterval = null;
         var diditPollStart    = null;
         var diditActive       = false; // true only while the modal is open and polling
+        var diditVerified     = false; // flips true once polling sees verified=true
         var DIDIT_POLL_MS     = 3000;
         var DIDIT_TIMEOUT_MS  = 120000; // 2 minutes
+
+        function showDiditSuccessThenClose() {
+            diditVerified = true;
+            diditActive   = false;
+            stopPolling();
+
+            var $modalInner = $('#didit-modal-overlay').children().first();
+            if (!$modalInner.find('#didit-success-message').length) {
+                $modalInner.append(
+                    '<div id="didit-success-message" style="position:absolute;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;z-index:1;">' +
+                    '<div style="font-size:3.5rem;color:#28a745;line-height:1;">&#x2713;</div>' +
+                    '<h4 style="margin-top:12px;color:#28a745;">Identity Verified</h4>' +
+                    '</div>'
+                );
+            } else {
+                $modalInner.find('#didit-success-message').show();
+            }
+
+            setTimeout(function() {
+                closeDiditModal();
+                $('#didit_verified').val('1');
+                $('#didit-verify-btn').hide();
+                showPostVerification();
+            }, 1500);
+        }
 
         function stopPolling() {
             if (diditPollInterval) {
@@ -884,10 +908,7 @@
                         // Guard against in-flight responses arriving after X was clicked
                         if (!diditActive) { return; }
                         if (resp.verified) {
-                            closeDiditModal();
-                            $('#didit_verified').val('1');
-                            $('#didit-verify-btn').hide();
-                            showPostVerification();
+                            showDiditSuccessThenClose();
                         }
                     }
                 });
@@ -923,8 +944,13 @@
         });
 
         $('#didit-modal-close').on('click', function() {
-            closeDiditModal();
-            showManualFallback();
+            if (diditVerified) {
+                closeDiditModal();
+                showPostVerification();
+            } else {
+                closeDiditModal();
+                showManualFallback();
+            }
         });
         // ── End Didit verification ───────────────────────────────────────────────
 

@@ -62,21 +62,38 @@
                 </div> 
             </div>
 
+            @php
+                $resolveImageUrl = function ($path) {
+                    if (empty($path)) {
+                        return null;
+                    }
+                    if (preg_match('#^https?://#i', $path)) {
+                        return $path;
+                    }
+                    $clean = ltrim($path, '/');
+                    return str_starts_with($clean, 'storage/')
+                        ? asset($clean)
+                        : asset('storage/' . $clean);
+                };
+                $licenseUrl = $resolveImageUrl($patient->drivers_license);
+                $selfieUrl  = $resolveImageUrl($patient->patient_photo);
+            @endphp
+
             <!-- Artist Information Section -->
             <div class="row g-3 p-2">
                 <h3>Artist Information</h3>
                 <div class="col-md-6">
                     <h4><strong>Drivers License:</strong></h4>
-                    @if($patient->drivers_license != NULL)
-                        <img class="img-fluid" src="{{ asset('storage/' . $patient->drivers_license) }}" />
+                    @if($licenseUrl)
+                        <img class="img-fluid" src="{{ $licenseUrl }}" alt="Driver's license" />
                     @else
                         <p class="text-muted">No image uploaded.</p>
                     @endif
                 </div>
                 <div class="col-md-6">
                     <h4><strong>Patient Selfie:</strong></h4>
-                    @if($patient->patient_photo != NULL)
-                        <img class="img-fluid" src="{{ asset('storage/' . $patient->patient_photo) }}" />
+                    @if($selfieUrl)
+                        <img class="img-fluid" src="{{ $selfieUrl }}" alt="Patient selfie" />
                     @else
                         <p class="text-muted">No image uploaded.</p>
                     @endif
