@@ -24,6 +24,27 @@
     .step-indicator .step.completed .step-circle { background: #adb5bd; color: #fff; }
     .step-indicator .step.completed .step-label { color: #6c757d; }
     .step-indicator .step-line.completed { background: #1a9cd8; }
+
+    #scrollHint {
+        position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%);
+        z-index: 1500; pointer-events: none;
+        background: rgba(255,255,255,0.9);
+        color: #1a9cd8;
+        padding: 0.4rem 0.9rem; border-radius: 999px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        font-size: 0.85rem; font-weight: 500;
+        display: flex; align-items: center; gap: 0.4rem;
+        opacity: 0; transition: opacity 0.3s ease;
+    }
+    #scrollHint.visible { opacity: 1; }
+    #scrollHint .scroll-chevron {
+        display: inline-block;
+        animation: scrollHintBounce 1.4s ease-in-out infinite;
+    }
+    @keyframes scrollHintBounce {
+        0%, 100% { transform: translateY(0); }
+        50%      { transform: translateY(4px); }
+    }
 </style>
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -501,14 +522,14 @@
                             <a href="{{ url('/pdfs/PRIVACY POLICY.pdf') }}" target="_blank" rel="noopener"> Privacy Policy</a></br>
                             <a href="{{ url('/pdfs/Patient Consent.pdf') }}" target="_blank" rel="noopener"> Patient Consent for Clinical Intake and Treatment</a>
                         </p>
-                        <label><input type="checkbox" name="terms_agree_check" id="terms_agree_check" value="1"> <strong>I Acknowledgment and Agree — Terms, Privacy & Medical Consent</strong></label>
+                        <label><input type="checkbox" name="terms_agree_check" id="terms_agree_check" value="1"> <strong>I Acknowledge and Agree — Terms, Privacy & Medical Consent</strong></label>
                     </div>
                 </div>
             </div>
 
             <div class="modal-footer">
                 <button class="btn btn-primary" id="terms_agree" disabled>
-                    I Agree
+                    Get Started
                 </button>
             </div>
 
@@ -598,6 +619,11 @@
     </div>
 </div>
 
+<div id="scrollHint" aria-hidden="true">
+    <span>Scroll down to get started</span>
+    <span class="scroll-chevron">&#x25BC;</span>
+</div>
+
 @endsection
 
 
@@ -605,6 +631,23 @@
 @section('script')
 <script>
     $(document).ready(function() {
+        // Scroll-down hint — visible only if the page loads at the top
+        (function() {
+            var $hint = $('#scrollHint');
+            if (!$hint.length) { return; }
+            if ((window.scrollY || window.pageYOffset || 0) > 5) { return; }
+            $hint.addClass('visible');
+            var hide = function() {
+                $hint.removeClass('visible');
+                window.removeEventListener('scroll', onScroll);
+                setTimeout(function() { $hint.remove(); }, 400);
+            };
+            var onScroll = function() {
+                if ((window.scrollY || window.pageYOffset || 0) > 5) { hide(); }
+            };
+            window.addEventListener('scroll', onScroll, { passive: true });
+        })();
+
         // Step indicator helper — purely visual, no impact on form logic
         function setStep(n) {
             $('#stepIndicator .step').each(function() {
