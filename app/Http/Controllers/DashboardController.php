@@ -579,6 +579,37 @@ class DashboardController extends Controller
         return redirect('/dashboard/marketing#tab-codes');
     }
 
+    public function toggleCode($id)
+    {
+        if (session()->get('user_type') != 1) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $code = DiscountCode::find($id);
+        if (!$code) {
+            return response()->json(['error' => 'Code not found'], 404);
+        }
+
+        if ($code->status === 'active') {
+            $code->status = 'paused';
+        } elseif ($code->status === 'paused') {
+            $code->status = 'active';
+        } else {
+            return response()->json([
+                'error' => 'Only active or paused codes can be toggled.',
+                'status' => $code->status,
+            ], 422);
+        }
+
+        $code->save();
+
+        return response()->json([
+            'success' => true,
+            'id'      => $code->id,
+            'status'  => $code->status,
+        ]);
+    }
+
     public function generateMarketingQr(Request $request)
     {
         if (session()->get('user_type') != 1) {

@@ -38,6 +38,7 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/dashboard/analytics', 'App\Http\Controllers\DashboardController@analytics');
     Route::get('/dashboard/marketing', 'App\Http\Controllers\DashboardController@marketingDashboard');
     Route::post('/dashboard/marketing/codes', 'App\Http\Controllers\DashboardController@createDiscountCode');
+    Route::post('/dashboard/marketing/toggle-code/{id}', 'App\Http\Controllers\DashboardController@toggleCode');
     Route::post('/dashboard/marketing/qr', 'App\Http\Controllers\DashboardController@generateMarketingQr');
     Route::get('/dashboard/flagged_pdf/{id}', 'App\Http\Controllers\DashboardController@downloadFlaggedPdf');
     Route::post('/dashboard/abandoned-intake/{id}/contact', 'App\Http\Controllers\DashboardController@markAbandonedContacted');

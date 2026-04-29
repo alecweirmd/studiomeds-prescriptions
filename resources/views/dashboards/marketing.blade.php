@@ -215,11 +215,12 @@
                                                     <th>Usage</th>
                                                     <th>Expiration</th>
                                                     <th>Status</th>
+                                                    <th>Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 @foreach($codes as $c)
-                                                    <tr>
+                                                    <tr data-code-id="{{ $c->id }}">
                                                         <td><code>{{ $c->code_string }}</code></td>
                                                         <td>{{ $c->partner_name }}</td>
                                                         <td>
@@ -230,7 +231,7 @@
                                                         </td>
                                                         <td>{{ $c->usage_count }} / {{ $c->usage_cap }}</td>
                                                         <td>{{ $c->expiration_date ? $c->expiration_date->format('m/d/Y') : '—' }}</td>
-                                                        <td>
+                                                        <td class="status-cell">
                                                             @php
                                                                 $statusBadge = [
                                                                     'active'    => 'success',
@@ -240,6 +241,17 @@
                                                                 ][$c->status] ?? 'secondary';
                                                             @endphp
                                                             <span class="badge bg-{{ $statusBadge }}">{{ ucfirst($c->status) }}</span>
+                                                        </td>
+                                                        <td>
+                                                            @if(in_array($c->status, ['active', 'paused']))
+                                                                <button type="button"
+                                                                        class="btn btn-sm {{ $c->status === 'active' ? 'btn-outline-warning' : 'btn-outline-success' }} toggle-code-btn"
+                                                                        data-code-id="{{ $c->id }}">
+                                                                    {{ $c->status === 'active' ? 'Pause' : 'Activate' }}
+                                                                </button>
+                                                            @else
+                                                                <span class="text-muted small">—</span>
+                                                            @endif
                                                         </td>
                                                     </tr>
                                                 @endforeach
@@ -388,6 +400,42 @@ $(document).ready(function() {
         } else {
             $('#newCodeValueWrap').show();
         }
+    });
+
+    // ── Pause / Activate referral code ─────────────────────────────────
+    $(document).on('click', '.toggle-code-btn', function() {
+        var $btn = $(this);
+        var codeId = $btn.data('code-id');
+        var $row = $btn.closest('tr');
+        var $statusCell = $row.find('.status-cell');
+        var prevBtnHtml = $btn.html();
+        $btn.prop('disabled', true).text('…');
+
+        $.ajax({
+            url: '/dashboard/marketing/toggle-code/' + codeId,
+            type: 'POST',
+            dataType: 'json',
+            data: { _token: $('meta[name="csrf-token"]').attr('content') },
+        }).done(function(resp) {
+            if (resp && resp.success) {
+                var newStatus = resp.status;
+                var label = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+                var badgeClass = newStatus === 'active' ? 'bg-success' : 'bg-warning';
+                $statusCell.html('<span class="badge ' + badgeClass + '">' + label + '</span>');
+                if (newStatus === 'active') {
+                    $btn.removeClass('btn-outline-success').addClass('btn-outline-warning').text('Pause');
+                } else {
+                    $btn.removeClass('btn-outline-warning').addClass('btn-outline-success').text('Activate');
+                }
+                $btn.prop('disabled', false);
+            } else {
+                $btn.prop('disabled', false).html(prevBtnHtml);
+                alert((resp && resp.error) ? resp.error : 'Could not toggle code.');
+            }
+        }).fail(function() {
+            $btn.prop('disabled', false).html(prevBtnHtml);
+            alert('Could not toggle code. Please try again.');
+        });
     });
 
     // ── Metrics table — sortable ───────────────────────────────────────

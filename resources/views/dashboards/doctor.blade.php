@@ -81,9 +81,9 @@
                                             <td>
                                                 {{ $p->first_name }} {{ $p->last_name }}
                                                 @if($p->verification_method === 'didit')
-                                                    <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
+                                                    <i class="fas fa-circle text-success ms-1" title="ID verified via Didit"></i>
                                                 @elseif($p->verification_method === 'manual_fallback')
-                                                    <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                    <i class="fas fa-circle text-warning ms-1" title="Manual ID review required"></i>
                                                 @endif
                                                 @if(isset($compedPatientIds[$p->id]))
                                                     <span class="badge bg-info text-dark ms-1" title="Used a free referral code">Comped</span>
@@ -162,9 +162,9 @@
                                                 <td>
                                                     {{ $p->first_name }} {{ $p->last_name }}
                                                     @if($p->verification_method === 'didit')
-                                                        <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
+                                                        <i class="fas fa-circle text-success ms-1" title="ID verified via Didit"></i>
                                                     @elseif($p->verification_method === 'manual_fallback')
-                                                        <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                        <i class="fas fa-circle text-warning ms-1" title="Manual ID review required"></i>
                                                     @endif
                                                     @if(isset($compedPatientIds[$p->id]))
                                                         <span class="badge bg-info text-dark ms-1" title="Used a free referral code">Comped</span>
@@ -220,9 +220,9 @@
                                                                 <td>
                                                                     {{ $p->first_name }} {{ $p->last_name }}
                                                                     @if($p->verification_method === 'didit')
-                                                                        <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
+                                                                        <i class="fas fa-circle text-success ms-1" title="ID verified via Didit"></i>
                                                                     @elseif($p->verification_method === 'manual_fallback')
-                                                                        <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                                        <i class="fas fa-circle text-warning ms-1" title="Manual ID review required"></i>
                                                                     @endif
                                                                     @if(isset($compedPatientIds[$p->id]))
                                                                         <span class="badge bg-info text-dark ms-1" title="Used a free referral code">Comped</span>
@@ -286,9 +286,9 @@
                                                                                 <td>
                                                                                     {{ $p->first_name }} {{ $p->last_name }}
                                                                                     @if($p->verification_method === 'didit')
-                                                                                        <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
+                                                                                        <i class="fas fa-circle text-success ms-1" title="ID verified via Didit"></i>
                                                                                     @elseif($p->verification_method === 'manual_fallback')
-                                                                                        <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                                                        <i class="fas fa-circle text-warning ms-1" title="Manual ID review required"></i>
                                                                                     @endif
                                                                                     @if(isset($compedPatientIds[$p->id]))
                                                                                         <span class="badge bg-info text-dark ms-1" title="Used a free referral code">Comped</span>
@@ -364,9 +364,9 @@
                                         <tr>
                                             <td>{{ $patient->first_name ?? '—' }} {{ $patient->last_name ?? '' }}
                                                 @if($patient && $patient->verification_method === 'didit')
-                                                    <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
+                                                    <i class="fas fa-circle text-success ms-1" title="ID verified via Didit"></i>
                                                 @elseif($patient && $patient->verification_method === 'manual_fallback')
-                                                    <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                    <i class="fas fa-circle text-warning ms-1" title="Manual ID review required"></i>
                                                 @endif
                                                 @if($patient && isset($compedPatientIds[$patient->id]))
                                                     <span class="badge bg-info text-dark ms-1" title="Used a free referral code">Comped</span>
@@ -419,9 +419,9 @@
                                                         <tr>
                                                             <td>{{ $patient->first_name ?? '—' }} {{ $patient->last_name ?? '' }}
                                                 @if($patient && $patient->verification_method === 'didit')
-                                                    <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
+                                                    <i class="fas fa-circle text-success ms-1" title="ID verified via Didit"></i>
                                                 @elseif($patient && $patient->verification_method === 'manual_fallback')
-                                                    <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                    <i class="fas fa-circle text-warning ms-1" title="Manual ID review required"></i>
                                                 @endif
                                                 @if($patient && isset($compedPatientIds[$patient->id]))
                                                     <span class="badge bg-info text-dark ms-1" title="Used a free referral code">Comped</span>
@@ -483,9 +483,9 @@
                                                                         <tr>
                                                                             <td>{{ $patient->first_name ?? '—' }} {{ $patient->last_name ?? '' }}
                                                 @if($patient && $patient->verification_method === 'didit')
-                                                    <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
+                                                    <i class="fas fa-circle text-success ms-1" title="ID verified via Didit"></i>
                                                 @elseif($patient && $patient->verification_method === 'manual_fallback')
-                                                    <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                    <i class="fas fa-circle text-warning ms-1" title="Manual ID review required"></i>
                                                 @endif
                                                 @if($patient && isset($compedPatientIds[$patient->id]))
                                                     <span class="badge bg-info text-dark ms-1" title="Used a free referral code">Comped</span>

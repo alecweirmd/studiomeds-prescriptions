@@ -567,18 +567,6 @@
 
                 <p id="paymentAmountText">A one-time <strong id="paymentAmountDisplay">$35.00</strong> payment is required.</p>
 
-                {{-- Referral code section --}}
-                <div class="border rounded p-3 mb-3" style="background:#f8f9fa;">
-                    <label class="form-label fw-semibold mb-1">Have a referral code?</label>
-                    <div class="d-flex gap-2">
-                        <input type="text" id="referral_code_input" class="form-control" placeholder="Enter code"
-                               autocomplete="off" autocapitalize="characters">
-                        <button type="button" class="btn btn-outline-primary" id="applyCodeBtn">Apply</button>
-                    </div>
-                    <div id="referral_code_success" class="text-success small mt-2" style="display:none;"></div>
-                    <div id="referral_code_error"   class="text-danger  small mt-2" style="display:none;"></div>
-                </div>
-
                 <div class="row g-3" id="cardFieldsRow">
 
                     <div class="col-12 col-md-6">
@@ -612,6 +600,24 @@
                     <img src="{{ asset('images/cards/mastercard.svg') }}" height="28" alt="Mastercard">
                     <img src="{{ asset('images/cards/americanexpress.svg') }}" height="28" alt="American Express">
                     <img src="{{ asset('images/cards/discover.svg') }}" height="28" alt="Discover">
+                </div>
+
+                {{-- Collapsible referral code section --}}
+                <div class="mt-3" id="referralCodeWrap">
+                    <a href="#" id="referralToggleLink" class="small text-decoration-none">
+                        <i class="fas fa-tag me-1"></i> Have a referral code?
+                    </a>
+                    <div class="collapse mt-2" id="referralCodeCollapse">
+                        <div class="border rounded p-3" style="background:#f8f9fa;">
+                            <div class="d-flex gap-2">
+                                <input type="text" id="referral_code_input" class="form-control" placeholder="Enter code"
+                                       autocomplete="off" autocapitalize="characters">
+                                <button type="button" class="btn btn-outline-primary" id="applyCodeBtn">Apply</button>
+                            </div>
+                            <div id="referral_code_success" class="text-success small mt-2" style="display:none;"></div>
+                            <div id="referral_code_error"   class="text-danger  small mt-2" style="display:none;"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="paymentProcessing" class="text-center mt-3" style="display:none;">
@@ -1045,6 +1051,23 @@
             this.value = this.value.replace(/\D/g, '').slice(0, 2);
             if (this.value.length === 2) { $('#modal_cvc').focus(); }
         });
+
+        // ── Referral code expand / collapse link ────────────────────────────
+        var referralCollapseEl = document.getElementById('referralCodeCollapse');
+        var referralCollapse   = referralCollapseEl ? new bootstrap.Collapse(referralCollapseEl, { toggle: false }) : null;
+        $('#referralToggleLink').on('click', function(e) {
+            e.preventDefault();
+            if (referralCollapse) { referralCollapse.toggle(); }
+        });
+        if (referralCollapseEl) {
+            referralCollapseEl.addEventListener('shown.bs.collapse', function() {
+                $('#referralToggleLink').html('<i class="fas fa-tag me-1"></i> Hide referral code');
+                $('#referral_code_input').trigger('focus');
+            });
+            referralCollapseEl.addEventListener('hidden.bs.collapse', function() {
+                $('#referralToggleLink').html('<i class="fas fa-tag me-1"></i> Have a referral code?');
+            });
+        }
 
         // ── Referral code apply ─────────────────────────────────────────────
         $('#applyCodeBtn').on('click', function() {
