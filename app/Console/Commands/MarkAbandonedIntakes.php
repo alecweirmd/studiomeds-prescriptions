@@ -9,11 +9,11 @@ class MarkAbandonedIntakes extends Command
 {
     protected $signature = 'intakes:mark-abandoned';
 
-    protected $description = 'Mark form_starts records older than 24 hours and not completed as abandoned';
+    protected $description = 'Mark form_starts records older than 2 hours and not completed as abandoned';
 
     public function handle()
     {
-        $cutoff = now()->subHours(24);
+        $cutoff = now()->subHours(2);
 
         FormStart::where('completed', false)
             ->whereNull('abandoned_at')

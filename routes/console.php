@@ -14,6 +14,12 @@ Schedule::command('intakes:mark-abandoned')
     ->withoutOverlapping()
     ->onOneServer();
 
+Schedule::command('intakes:abandoned-report')
+    ->dailyAt('09:00')
+    ->timezone('America/New_York')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 Schedule::command('outreach:post-approval-followups')
     ->dailyAt('09:00')
     ->withoutOverlapping()

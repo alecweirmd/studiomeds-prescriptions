@@ -409,6 +409,7 @@ class UsersController extends Controller
             if ($formStart) {
                 $formStart->completed = true;
                 $formStart->patient_id = $patient->id;
+                $formStart->abandoned_at = null;
                 $formStart->save();
             }
 
