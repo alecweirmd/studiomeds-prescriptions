@@ -629,16 +629,23 @@ class DashboardController extends Controller
         }
         $url = 'https://studiomeds.com?' . http_build_query($params);
 
-        $png = QrCode::format('png')
-            ->size(400)
-            ->margin(1)
-            ->color(0, 0, 0)
-            ->backgroundColor(255, 255, 255)
-            ->generate($url);
+        try {
+            $svg = QrCode::format('svg')
+                ->size(400)
+                ->margin(1)
+                ->color(0, 0, 0)
+                ->backgroundColor(255, 255, 255)
+                ->generate($url);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'error'  => $e->getMessage(),
+            ], 500);
+        }
 
         return response()->json([
             'status' => 'success',
-            'qr'     => 'data:image/png;base64,' . base64_encode($png),
+            'qr'     => 'data:image/svg+xml;base64,' . base64_encode($svg),
             'url'    => $url,
         ]);
     }

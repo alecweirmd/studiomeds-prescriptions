@@ -149,7 +149,7 @@
                                 </div>
                                 <div class="mt-3 d-flex gap-2">
                                     <button class="btn btn-primary" id="qrGenerateBtn">Generate</button>
-                                    <a class="btn btn-success" id="qrDownloadBtn" style="display:none;" download="studiomeds-qr.png">Download PNG</a>
+                                    <a class="btn btn-success" id="qrDownloadBtn" style="display:none;" download="studiomeds-qr.svg">Download SVG</a>
                                 </div>
                                 <div class="mt-3" id="qrPreview" style="display:none;">
                                     <img id="qrImage" alt="QR Code" style="background:#fff;border:1px solid #dee2e6;padding:8px;max-width:240px;">
