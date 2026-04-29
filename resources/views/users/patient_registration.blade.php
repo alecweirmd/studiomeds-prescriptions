@@ -225,11 +225,11 @@
                 <div class="row g-3 p-2" id="verification-section">
                     <h3>Identity Verification</h3>
                     <div class="col-12">
-                        <p class="text-muted mb-2">We need to verify your identity before you continue. Click below to complete a quick ID check.</p>
+                        <p class="text-muted small mb-2">We need to quickly verify your identity before continuing. You will be asked to take a photo of your ID and a selfie. This takes about 60 seconds. For best results, use good lighting and hold your ID flat and steady. If automatic verification does not work, you can upload photos manually instead.</p>
                         <button type="button" class="btn btn-primary" id="didit-verify-btn" disabled>Verify My Identity</button>
                     </div>
 
-                    {{-- Manual fallback uploads (hidden until Didit fails twice or AJAX error) --}}
+                    {{-- Manual fallback uploads (hidden until Didit fails once: session/AJAX error, polling timeout, or user closes the modal without verifying) --}}
                     <div id="manual-fallback-section" style="display:none;">
                         <div class="alert alert-info border border-info mt-3 p-4" style="border-width:2px !important;">
                             <h5 class="alert-heading mb-1">&#128274; Please Complete Identity Verification Below</h5>
@@ -841,8 +841,6 @@
         // ── End Didit verify button gating ──────────────────────────────────────
 
         // ── Didit verification ──────────────────────────────────────────────────
-        var diditFailureCount = 0;
-
         function showPostVerification() {
             $('#post-verification-section').show();
             $('#submit-footer').show();
