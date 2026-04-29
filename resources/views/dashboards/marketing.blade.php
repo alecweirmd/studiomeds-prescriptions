@@ -141,6 +141,10 @@
                                             <option value="email">Email</option>
                                             <option value="other">Other</option>
                                         </select>
+                                        <div class="mt-2" id="qrSourceOtherWrap" style="display:none;">
+                                            <label class="form-label">Name your source</label>
+                                            <input type="text" class="form-control" id="qrSourceOther" placeholder="e.g. trade_show_booth">
+                                        </div>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label">Campaign (optional)</label>
@@ -364,8 +368,27 @@ $(document).ready(function() {
     });
 
     // ── QR Generator ────────────────────────────────────────────────────
+    // Toggle "Name your source" input when Other is selected
+    $('#qrSource').on('change', function() {
+        if ($(this).val() === 'other') {
+            $('#qrSourceOtherWrap').show();
+        } else {
+            $('#qrSourceOtherWrap').hide();
+            $('#qrSourceOther').val('');
+        }
+    });
+
     $('#qrGenerateBtn').on('click', function() {
         var $btn = $(this);
+        var source = $('#qrSource').val();
+        if (source === 'other') {
+            var custom = $('#qrSourceOther').val().trim();
+            if (!custom) {
+                alert('Please name your source.');
+                return;
+            }
+            source = custom;
+        }
         $btn.prop('disabled', true).text('Generating...');
         $.ajax({
             url: '/dashboard/marketing/qr',
@@ -373,7 +396,7 @@ $(document).ready(function() {
             dataType: 'json',
             data: {
                 _token:   $('meta[name="csrf-token"]').attr('content'),
-                source:   $('#qrSource').val(),
+                source:   source,
                 campaign: $('#qrCampaign').val().trim(),
             },
         }).done(function(resp) {

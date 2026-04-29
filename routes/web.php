@@ -41,7 +41,6 @@ Route::group(['middleware' => 'auth'], function () {
     Route::post('/dashboard/marketing/toggle-code/{id}', 'App\Http\Controllers\DashboardController@toggleCode');
     Route::post('/dashboard/marketing/qr', 'App\Http\Controllers\DashboardController@generateMarketingQr');
     Route::get('/dashboard/flagged_pdf/{id}', 'App\Http\Controllers\DashboardController@downloadFlaggedPdf');
-    Route::post('/dashboard/abandoned-intake/{id}/contact', 'App\Http\Controllers\DashboardController@markAbandonedContacted');
 });
 
 Route::post('/ajax/record_acknowledgement', 'App\Http\Controllers\UsersController@recordAcknowledgement');
@@ -50,6 +49,8 @@ Route::post('/ajax/track-utm-visit', 'App\Http\Controllers\UtmController@trackVi
 Route::post('/ajax/validate-code', 'App\Http\Controllers\ReferralCodeController@validateCode');
 Route::post('/ajax/didit-session', 'App\Http\Controllers\DiditController@createSession');
 Route::post('/ajax/didit-status', 'App\Http\Controllers\DiditController@checkStatus');
+Route::post('/ajax/abandoned-contact/{id}', 'App\Http\Controllers\DashboardController@contactAbandonedIntake');
+Route::post('/ajax/abandoned-dismiss/{id}', 'App\Http\Controllers\DashboardController@dismissAbandonedIntake');
 Route::post('/webhook/didit', 'App\Http\Controllers\DiditController@webhook');
 
 Route::get('/register', 'App\Http\Controllers\UsersController@artist_register');

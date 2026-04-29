@@ -19,6 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
             '/ajax/track-form-start',
             '/ajax/track-utm-visit',
             '/ajax/validate-code',
+            '/ajax/abandoned-contact/*',
+            '/ajax/abandoned-dismiss/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

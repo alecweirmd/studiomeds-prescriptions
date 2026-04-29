@@ -137,9 +137,13 @@
                                                         <td>{{ $intake->started_at->format('m/d/Y g:i A') }}</td>
                                                         <td>{{ (int) $intake->started_at->diffInDays(now()) }}</td>
                                                         <td>
-                                                            <button type="button" class="btn btn-sm btn-outline-success mark-contacted-btn"
+                                                            <button type="button" class="btn btn-sm btn-outline-success contact-intake-btn"
                                                                     data-intake-id="{{ $intake->id }}">
-                                                                Mark as Contacted
+                                                                Contact
+                                                            </button>
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary dismiss-intake-btn"
+                                                                    data-intake-id="{{ $intake->id }}">
+                                                                Dismiss
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -233,34 +237,65 @@
 @section('script')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-    // Mark abandoned intake as contacted (AJAX, no reload)
-    $(document).on('click', '.mark-contacted-btn', function() {
+    // Remove a row, hide table if empty
+    function removeAbandonedRow(intakeId) {
+        var $row = $('#abandonedIntakesTable tbody tr[data-intake-id="' + intakeId + '"]');
+        $row.fadeOut(200, function() {
+            $row.remove();
+            if ($('#abandonedIntakesTable tbody tr').length === 0) {
+                $('#abandonedIntakesTable').hide();
+                $('#abandonedEmptyMsg').show();
+            }
+        });
+    }
+
+    // Contact: send outreach email + mark contacted_at, then remove row
+    $(document).on('click', '.contact-intake-btn', function() {
         var $btn = $(this);
         var intakeId = $btn.data('intake-id');
-        $btn.prop('disabled', true).text('Saving...');
+        $btn.prop('disabled', true).text('Sending...');
         $.ajax({
-            url: '/dashboard/abandoned-intake/' + intakeId + '/contact',
+            url: '/ajax/abandoned-contact/' + intakeId,
             type: 'POST',
             data: { _token: $('meta[name="csrf-token"]').attr('content') },
             dataType: 'json',
             success: function(resp) {
                 if (resp && resp.success) {
-                    var $row = $('#abandonedIntakesTable tbody tr[data-intake-id="' + intakeId + '"]');
-                    $row.fadeOut(200, function() {
-                        $row.remove();
-                        if ($('#abandonedIntakesTable tbody tr').length === 0) {
-                            $('#abandonedIntakesTable').hide();
-                            $('#abandonedEmptyMsg').show();
-                        }
-                    });
+                    removeAbandonedRow(intakeId);
                 } else {
-                    $btn.prop('disabled', false).text('Mark as Contacted');
-                    alert('Could not mark as contacted. Please try again.');
+                    $btn.prop('disabled', false).text('Contact');
+                    alert((resp && resp.error) ? resp.error : 'Could not send email. Please try again.');
+                }
+            },
+            error: function(xhr) {
+                $btn.prop('disabled', false).text('Contact');
+                var msg = (xhr.responseJSON && xhr.responseJSON.error) ? xhr.responseJSON.error : 'Could not send email. Please try again.';
+                alert(msg);
+            }
+        });
+    });
+
+    // Dismiss: mark dismissed_at only, no email
+    $(document).on('click', '.dismiss-intake-btn', function() {
+        var $btn = $(this);
+        var intakeId = $btn.data('intake-id');
+        $btn.prop('disabled', true).text('Dismissing...');
+        $.ajax({
+            url: '/ajax/abandoned-dismiss/' + intakeId,
+            type: 'POST',
+            data: { _token: $('meta[name="csrf-token"]').attr('content') },
+            dataType: 'json',
+            success: function(resp) {
+                if (resp && resp.success) {
+                    removeAbandonedRow(intakeId);
+                } else {
+                    $btn.prop('disabled', false).text('Dismiss');
+                    alert('Could not dismiss. Please try again.');
                 }
             },
             error: function() {
-                $btn.prop('disabled', false).text('Mark as Contacted');
-                alert('Could not mark as contacted. Please try again.');
+                $btn.prop('disabled', false).text('Dismiss');
+                alert('Could not dismiss. Please try again.');
             }
         });
     });

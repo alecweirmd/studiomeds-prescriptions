@@ -14,6 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class DashboardController extends Controller
@@ -410,18 +411,52 @@ class DashboardController extends Controller
     {
         return FormStart::whereNotNull('abandoned_at')
             ->whereNull('contacted_at')
+            ->whereNull('dismissed_at')
             ->orderByDesc('started_at')
             ->get();
     }
 
-    public function markAbandonedContacted($id)
+    public function contactAbandonedIntake($id)
     {
         if (session()->get('user_type') != 1) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
         $intake = FormStart::findOrFail($id);
+
+        if (!$intake->email) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'No email on record for this intake.',
+            ], 422);
+        }
+
+        try {
+            Mail::send('emails.abandoned_intake', [], function ($message) use ($intake) {
+                $message->to($intake->email)
+                    ->subject('We noticed you started a StudioMeds evaluation');
+            });
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+
         $intake->contacted_at = now();
+        $intake->save();
+
+        return response()->json(['success' => true, 'id' => $intake->id]);
+    }
+
+    public function dismissAbandonedIntake($id)
+    {
+        if (session()->get('user_type') != 1) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $intake = FormStart::findOrFail($id);
+        $intake->dismissed_at = now();
         $intake->save();
 
         return response()->json(['success' => true, 'id' => $intake->id]);
