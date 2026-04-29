@@ -255,8 +255,10 @@ class DashboardController extends Controller
 
     public function approveAllPatients()
     {
-        // Get all patients awaiting approval
+        // Get all patients awaiting approval — Didit-verified only.
+        // Manual-fallback / unverified intakes must be reviewed individually.
         $patients = Patients::with('patientsCQI')
+            ->where('verification_method', 'didit')
             ->get()
             ->filter(fn($p) => $p->patientsCQI && $p->patientsCQI->status == 0);
 
