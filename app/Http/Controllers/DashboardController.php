@@ -7,6 +7,9 @@ use App\Models\PatientsCQI;
 use App\Models\Patients;
 use App\Models\PatientAcknowledgement;
 use App\Models\FormStart;
+use App\Models\UtmVisit;
+use App\Models\DiscountCode;
+use App\Models\DiscountRedemption;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
@@ -179,6 +182,17 @@ class DashboardController extends Controller
             }
 
             $data['flaggedData'] = ['current' => $currentFlagged, 'archive' => $flaggedArchive];
+
+            // Patient ids that used a "free" referral code (for the Comped badge)
+            $compedPatientIds = DiscountRedemption::query()
+                ->where('attempt_outcome', 'success')
+                ->whereNotNull('patient_id')
+                ->whereHas('discountCode', function ($q) {
+                    $q->where('discount_type', 'free');
+                })
+                ->pluck('patient_id')
+                ->all();
+            $data['compedPatientIds'] = array_flip($compedPatientIds);
 
             return view('dashboards/doctor', $data);
         } else {
@@ -432,6 +446,167 @@ class DashboardController extends Controller
         return response(Storage::get('flagged_submissions/' . $ack->pdf_path), 200, [
             'Content-Type'        => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="' . $ack->pdf_path . '"',
+        ]);
+    }
+
+    // ── Marketing Dashboard ─────────────────────────────────────────────
+    public function marketingDashboard(Request $request)
+    {
+        if (session()->get('user_type') != 1) {
+            abort(403);
+        }
+
+        // Auto-update discount code statuses on load
+        $today = now()->startOfDay();
+        DiscountCode::where('status', 'active')
+            ->where('expiration_date', '<', $today->toDateString())
+            ->update(['status' => 'expired']);
+        DiscountCode::where('status', 'active')
+            ->whereColumn('usage_count', '>=', 'usage_cap')
+            ->update(['status' => 'exhausted']);
+
+        // UTM Overview — supports time filter via ?range=7|30|all
+        $range = $request->input('range', '30');
+        $rangeStart = null;
+        if ($range === '7') {
+            $rangeStart = now()->subDays(7);
+        } elseif ($range === '30') {
+            $rangeStart = now()->subDays(30);
+        }
+
+        $visitsQuery = UtmVisit::query();
+        if ($rangeStart) {
+            $visitsQuery->where('first_touch_at', '>=', $rangeStart);
+        }
+        $allVisits = $visitsQuery->get();
+
+        $sourceGroups = [];
+        foreach ($allVisits as $v) {
+            $key = $v->utm_source ?: '__direct__';
+            if (!isset($sourceGroups[$key])) {
+                $sourceGroups[$key] = ['source' => $v->utm_source ?: 'Direct (no UTM)', 'visits' => 0, 'completed' => 0];
+            }
+            $sourceGroups[$key]['visits']++;
+            if ($v->completed) {
+                $sourceGroups[$key]['completed']++;
+            }
+        }
+        foreach ($sourceGroups as &$g) {
+            $g['conversion_rate'] = $g['visits'] > 0 ? round(($g['completed'] / $g['visits']) * 100, 1) : 0;
+        }
+        unset($g);
+        // Sort: real sources by visit count desc, then Direct, then total
+        uasort($sourceGroups, function ($a, $b) {
+            return $b['visits'] <=> $a['visits'];
+        });
+
+        $utmTotals = [
+            'visits'          => array_sum(array_column($sourceGroups, 'visits')),
+            'completed'       => array_sum(array_column($sourceGroups, 'completed')),
+        ];
+        $utmTotals['conversion_rate'] = $utmTotals['visits'] > 0
+            ? round(($utmTotals['completed'] / $utmTotals['visits']) * 100, 1)
+            : 0;
+
+        // Discount codes — list all
+        $codes = DiscountCode::orderByDesc('created_at')->get();
+
+        // Metrics rows: per-code totals
+        $metrics = $codes->map(function ($code) {
+            $totalValue = DiscountRedemption::where('discount_code_id', $code->id)
+                ->where('attempt_outcome', 'success')
+                ->sum('discount_amount_applied');
+            $remaining = max(0, ($code->usage_cap ?? 0) - ($code->usage_count ?? 0));
+            return [
+                'id'                => $code->id,
+                'code_string'       => $code->code_string,
+                'partner_name'      => $code->partner_name,
+                'discount_type'     => $code->discount_type,
+                'discount_value'    => $code->discount_value,
+                'usage_count'       => $code->usage_count,
+                'usage_cap'         => $code->usage_cap,
+                'remaining'         => $remaining,
+                'expiration_date'   => $code->expiration_date,
+                'status'            => $code->status,
+                'total_value_comped' => round((float) $totalValue, 2),
+            ];
+        })->values();
+
+        return view('dashboards/marketing', [
+            'utmRange'      => $range,
+            'utmSources'    => array_values($sourceGroups),
+            'utmTotals'     => $utmTotals,
+            'codes'         => $codes,
+            'metrics'       => $metrics,
+            'baseUrl'       => 'https://studiomeds.com',
+        ]);
+    }
+
+    public function createDiscountCode(Request $request)
+    {
+        if (session()->get('user_type') != 1) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'code_string'     => ['required', 'string', 'max:60', 'unique:discount_codes,code_string'],
+            'partner_name'    => ['required', 'string', 'max:255'],
+            'discount_type'   => ['required', 'in:free,fixed_dollar_off,percent_off'],
+            'discount_value'  => ['nullable', 'numeric', 'min:0'],
+            'usage_cap'       => ['required', 'integer', 'min:1'],
+            'expiration_date' => ['required', 'date', 'after_or_equal:today'],
+            'notes'           => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        if ($validated['discount_type'] !== 'free' && empty($validated['discount_value'])) {
+            return back()->withErrors(['discount_value' => 'A discount value is required for this discount type.'])->withInput();
+        }
+
+        DiscountCode::create([
+            'code_string'     => $validated['code_string'],
+            'partner_name'    => $validated['partner_name'],
+            'discount_type'   => $validated['discount_type'],
+            'discount_value'  => $validated['discount_type'] === 'free' ? null : $validated['discount_value'],
+            'usage_cap'       => $validated['usage_cap'],
+            'usage_count'     => 0,
+            'expiration_date' => $validated['expiration_date'],
+            'status'          => 'active',
+            'notes'           => $validated['notes'] ?? null,
+        ]);
+
+        Session::flash('type', 'success');
+        Session::flash('message', 'Referral code created.');
+        return redirect('/dashboard/marketing#tab-codes');
+    }
+
+    public function generateMarketingQr(Request $request)
+    {
+        if (session()->get('user_type') != 1) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'source'   => ['required', 'string', 'max:60'],
+            'campaign' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $params = ['utm_source' => $request->input('source')];
+        if ($request->filled('campaign')) {
+            $params['utm_campaign'] = $request->input('campaign');
+        }
+        $url = 'https://studiomeds.com?' . http_build_query($params);
+
+        $png = QrCode::format('png')
+            ->size(400)
+            ->margin(1)
+            ->color(0, 0, 0)
+            ->backgroundColor(255, 255, 255)
+            ->generate($url);
+
+        return response()->json([
+            'status' => 'success',
+            'qr'     => 'data:image/png;base64,' . base64_encode($png),
+            'url'    => $url,
         ]);
     }
 }

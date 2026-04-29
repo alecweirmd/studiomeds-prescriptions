@@ -58,6 +58,8 @@
     <form method="post" id="cqiForm" enctype="multipart/form-data" action="{{ url('users/store_patient') }}" novalidate>
         <input type="hidden" name="patient_id" id="patient_id" value="{{ old('patient_id') }}">
         <input type="hidden" name="user_ip" id="user_ip" value="{{ old('user_ip') }}">
+        <input type="hidden" name="utm_session_id" id="utm_session_id" value="">
+        <input type="hidden" name="applied_code" id="applied_code" value="">
         @csrf
         @method('post')
 
@@ -563,9 +565,21 @@
 
             <div class="modal-body">
 
-                <p>A one-time <strong>$35.00</strong> payment is required.</p>
+                <p id="paymentAmountText">A one-time <strong id="paymentAmountDisplay">$35.00</strong> payment is required.</p>
 
-                <div class="row g-3">
+                {{-- Referral code section --}}
+                <div class="border rounded p-3 mb-3" style="background:#f8f9fa;">
+                    <label class="form-label fw-semibold mb-1">Have a referral code?</label>
+                    <div class="d-flex gap-2">
+                        <input type="text" id="referral_code_input" class="form-control" placeholder="Enter code"
+                               autocomplete="off" autocapitalize="characters">
+                        <button type="button" class="btn btn-outline-primary" id="applyCodeBtn">Apply</button>
+                    </div>
+                    <div id="referral_code_success" class="text-success small mt-2" style="display:none;"></div>
+                    <div id="referral_code_error"   class="text-danger  small mt-2" style="display:none;"></div>
+                </div>
+
+                <div class="row g-3" id="cardFieldsRow">
 
                     <div class="col-12 col-md-6">
                         <label>Card Number</label>
@@ -593,7 +607,7 @@
 
                     <input type="hidden" id="modal_payment_amount" value="35.00">
                 </div>
-                <div class="mt-2 d-flex align-items-center gap-2">
+                <div class="mt-2 d-flex align-items-center gap-2" id="cardLogosRow">
                     <img src="{{ asset('images/cards/visa.svg') }}" height="28" alt="Visa">
                     <img src="{{ asset('images/cards/mastercard.svg') }}" height="28" alt="Mastercard">
                     <img src="{{ asset('images/cards/americanexpress.svg') }}" height="28" alt="American Express">
@@ -611,7 +625,10 @@
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 
                 <button class="btn btn-primary" id="confirmPaymentBtn">
-                    Pay & Submit
+                    Pay &amp; Submit
+                </button>
+                <button class="btn btn-success" id="completeFreeBtn" style="display:none;">
+                    Complete My Evaluation
                 </button>
             </div>
 
@@ -1027,6 +1044,95 @@
         $('#modal_exp_year').on('input', function() {
             this.value = this.value.replace(/\D/g, '').slice(0, 2);
             if (this.value.length === 2) { $('#modal_cvc').focus(); }
+        });
+
+        // ── Referral code apply ─────────────────────────────────────────────
+        $('#applyCodeBtn').on('click', function() {
+            var code = $('#referral_code_input').val().trim();
+            $('#referral_code_success').hide().text('');
+            $('#referral_code_error').hide().text('');
+            if (!code) {
+                $('#referral_code_error').text('Please enter a code.').show();
+                return;
+            }
+            var $btn = $(this);
+            $btn.prop('disabled', true).text('Checking...');
+            $.ajax({
+                url: '/ajax/validate-code',
+                type: 'POST',
+                dataType: 'json',
+                data: { code: code },
+            }).done(function(resp) {
+                if (resp && resp.success) {
+                    $('#applied_code').val(resp.code);
+                    $('#referral_code_success').text(resp.message).show();
+                    $('#referral_code_input').prop('disabled', true);
+                    $btn.text('Applied').prop('disabled', true);
+                    if (resp.discount_type === 'free') {
+                        $('#modal_payment_amount').val('0.00');
+                        $('#paymentAmountDisplay').text('$0.00');
+                        $('#paymentAmountText').html('Your evaluation is fully comped — no payment required.');
+                        // Hide all card fields and switch button
+                        $('#cardFieldsRow').hide();
+                        $('#cardLogosRow').hide();
+                        $('#confirmPaymentBtn').hide();
+                        $('#completeFreeBtn').show();
+                    } else {
+                        $('#modal_payment_amount').val(resp.new_amount.toFixed(2));
+                        $('#paymentAmountDisplay').text('$' + resp.new_amount.toFixed(2));
+                        $('#paymentAmountText').html(
+                            'Discounted total: <strong>$' + resp.new_amount.toFixed(2) + '</strong> ' +
+                            '<span class="text-muted text-decoration-line-through">$' + resp.base_amount.toFixed(2) + '</span>'
+                        );
+                    }
+                } else {
+                    $('#referral_code_error').text((resp && resp.message) ? resp.message : 'That code is not valid.').show();
+                    $btn.prop('disabled', false).text('Apply');
+                }
+            }).fail(function() {
+                $('#referral_code_error').text('Something went wrong. Please try again.').show();
+                $btn.prop('disabled', false).text('Apply');
+            });
+        });
+
+        // ── Complete free evaluation (no payment) ───────────────────────────
+        $('#completeFreeBtn').on('click', function() {
+            $('#completeFreeBtn').prop('disabled', true).text('Processing...');
+            $('#paymentProcessing').show();
+
+            // Include payment_amount=0 so backend can verify the free flow.
+            if ($('#cqiForm input[name="payment_amount"]').length === 0) {
+                $('<input type="hidden" name="payment_amount">').val('0.00').appendTo('#cqiForm');
+            } else {
+                $('#cqiForm input[name="payment_amount"]').val('0.00');
+            }
+
+            var siteKey = '{{ config("services.recaptcha.site_key") }}';
+
+            function submitFree() {
+                paymentReady = true;
+                $('#cqiForm').submit();
+            }
+
+            if (siteKey && typeof grecaptcha !== 'undefined') {
+                grecaptcha.ready(function() {
+                    grecaptcha.execute(siteKey, { action: 'submit_patient' })
+                        .then(function(token) {
+                            if ($('#recaptcha_token').length === 0) {
+                                $('<input>').attr({ type: 'hidden', id: 'recaptcha_token', name: 'recaptcha_token', value: token }).appendTo('#cqiForm');
+                            } else {
+                                $('#recaptcha_token').val(token);
+                            }
+                            submitFree();
+                        }).catch(function() {
+                            $('#completeFreeBtn').prop('disabled', false).text('Complete My Evaluation');
+                            $('#paymentProcessing').hide();
+                            alert('Something went wrong. Please try again.');
+                        });
+                });
+            } else {
+                submitFree();
+            }
         });
 
         $('#confirmPaymentBtn').on('click', function() {

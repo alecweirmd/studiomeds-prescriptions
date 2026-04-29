@@ -11,6 +11,9 @@
                     <a href="{{ url('/dashboard') }}" class="btn btn-primary btn-sm">
                         Clinical Dashboard
                     </a>
+                    <a href="{{ url('/dashboard/marketing') }}" class="btn btn-secondary btn-sm">
+                        &#x1F4E2; Marketing
+                    </a>
                 </div>
             </div>
 

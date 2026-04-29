@@ -117,6 +117,103 @@
             theme: 'bootstrap-5',
         });
     </script>
+    <script>
+    // ── UTM capture (non-blocking) ───────────────────────────────────────
+    // Reads utm_source/medium/campaign from URL on every page load,
+    // persists to cookie (90-day) + localStorage, and pings the server.
+    (function() {
+        try {
+            function uuid() {
+                if (window.crypto && typeof crypto.randomUUID === 'function') {
+                    return crypto.randomUUID();
+                }
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    var r = Math.random() * 16 | 0;
+                    var v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+            function setCookie(name, value, days) {
+                try {
+                    var d = new Date();
+                    d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+                    document.cookie = name + '=' + encodeURIComponent(value) +
+                        ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
+                } catch (e) {}
+            }
+            function getCookie(name) {
+                try {
+                    var match = document.cookie.match('(?:^|; )' + name + '=([^;]*)');
+                    return match ? decodeURIComponent(match[1]) : null;
+                } catch (e) { return null; }
+            }
+            function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+            function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+            var sessionId = lsGet('sm_utm_session_id');
+            if (!sessionId) {
+                sessionId = uuid();
+                lsSet('sm_utm_session_id', sessionId);
+            }
+            window.__smUtmSessionId = sessionId;
+
+            var params = new URLSearchParams(window.location.search);
+            var fromUrl = {
+                utm_source:   params.get('utm_source'),
+                utm_medium:   params.get('utm_medium'),
+                utm_campaign: params.get('utm_campaign'),
+            };
+            var hasAny = fromUrl.utm_source || fromUrl.utm_medium || fromUrl.utm_campaign;
+
+            var stored = null;
+            try {
+                var raw = lsGet('utm_data') || getCookie('utm_data');
+                if (raw) { stored = JSON.parse(raw); }
+            } catch (e) { stored = null; }
+
+            var data = stored || {};
+            if (hasAny) {
+                if (fromUrl.utm_source)   data.utm_source   = fromUrl.utm_source;
+                if (fromUrl.utm_medium)   data.utm_medium   = fromUrl.utm_medium;
+                if (fromUrl.utm_campaign) data.utm_campaign = fromUrl.utm_campaign;
+                var json = JSON.stringify(data);
+                setCookie('utm_data', json, 90);
+                lsSet('utm_data', json);
+            }
+
+            var payload = {
+                session_id:   sessionId,
+                utm_source:   data.utm_source   || null,
+                utm_medium:   data.utm_medium   || null,
+                utm_campaign: data.utm_campaign || null,
+            };
+
+            // Fire & forget; never block page load.
+            setTimeout(function() {
+                try {
+                    var fd = new FormData();
+                    Object.keys(payload).forEach(function(k) {
+                        if (payload[k] !== null) { fd.append(k, payload[k]); }
+                    });
+                    fetch('/ajax/track-utm-visit', {
+                        method: 'POST',
+                        body: fd,
+                        credentials: 'same-origin',
+                        keepalive: true,
+                    }).catch(function() {});
+                } catch (e) {}
+            }, 0);
+
+            // Populate the hidden field on the patient registration form when present
+            document.addEventListener('DOMContentLoaded', function() {
+                var hidden = document.getElementById('utm_session_id');
+                if (hidden) { hidden.value = sessionId; }
+            });
+        } catch (e) {
+            // Silently fail — UTM capture must never break the page.
+        }
+    })();
+    </script>
     @yield('script')
 </body>
 

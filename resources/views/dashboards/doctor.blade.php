@@ -12,6 +12,9 @@
                     <a href="{{ url('/dashboard/analytics') }}" class="btn btn-secondary btn-sm">
                         &#x1F4CA; Analytics
                     </a>
+                    <a href="{{ url('/dashboard/marketing') }}" class="btn btn-secondary btn-sm">
+                        &#x1F4E2; Marketing
+                    </a>
                 </div>
             </div>
 
@@ -81,6 +84,9 @@
                                                     <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
                                                 @elseif($p->verification_method === 'manual_fallback')
                                                     <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                @endif
+                                                @if(isset($compedPatientIds[$p->id]))
+                                                    <span class="badge bg-info text-dark ms-1" title="Used a free referral code">Comped</span>
                                                 @endif
                                                 @if(isset($patientAcknowledgements[$p->id]))
                                                     @php
@@ -160,6 +166,9 @@
                                                     @elseif($p->verification_method === 'manual_fallback')
                                                         <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
                                                     @endif
+                                                    @if(isset($compedPatientIds[$p->id]))
+                                                        <span class="badge bg-info text-dark ms-1" title="Used a free referral code">Comped</span>
+                                                    @endif
                                                     @if(isset($patientAcknowledgements[$p->id]))
                                                         @php $ackW = $patientAcknowledgements[$p->id]; $linesW = ['<strong>Triggered Questions:</strong>']; foreach ($ackW->triggered_questions as $q) { $linesW[] = '&bull; ' . e($questionLabels[$q] ?? $q); } $linesW[] = ''; $linesW[] = '<strong>I Understand:</strong> ' . ($ackW->acknowledged_at ? 'Yes' : 'No'); @endphp
                                                         <span class="text-danger ms-1" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="right" title="{{ implode('<br>', $linesW) }}">&#9888;</span>
@@ -214,6 +223,9 @@
                                                                         <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
                                                                     @elseif($p->verification_method === 'manual_fallback')
                                                                         <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                                    @endif
+                                                                    @if(isset($compedPatientIds[$p->id]))
+                                                                        <span class="badge bg-info text-dark ms-1" title="Used a free referral code">Comped</span>
                                                                     @endif
                                                                     @if(isset($patientAcknowledgements[$p->id]))
                                                                         @php $ackW = $patientAcknowledgements[$p->id]; $linesW = ['<strong>Triggered Questions:</strong>']; foreach ($ackW->triggered_questions as $q) { $linesW[] = '&bull; ' . e($questionLabels[$q] ?? $q); } $linesW[] = ''; $linesW[] = '<strong>I Understand:</strong> ' . ($ackW->acknowledged_at ? 'Yes' : 'No'); @endphp
@@ -277,6 +289,9 @@
                                                                                         <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
                                                                                     @elseif($p->verification_method === 'manual_fallback')
                                                                                         <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                                                    @endif
+                                                                                    @if(isset($compedPatientIds[$p->id]))
+                                                                                        <span class="badge bg-info text-dark ms-1" title="Used a free referral code">Comped</span>
                                                                                     @endif
                                                                                     @if(isset($patientAcknowledgements[$p->id]))
                                                                                         @php $ackW = $patientAcknowledgements[$p->id]; $linesW = ['<strong>Triggered Questions:</strong>']; foreach ($ackW->triggered_questions as $q) { $linesW[] = '&bull; ' . e($questionLabels[$q] ?? $q); } $linesW[] = ''; $linesW[] = '<strong>I Understand:</strong> ' . ($ackW->acknowledged_at ? 'Yes' : 'No'); @endphp
@@ -353,6 +368,9 @@
                                                 @elseif($patient && $patient->verification_method === 'manual_fallback')
                                                     <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
                                                 @endif
+                                                @if($patient && isset($compedPatientIds[$patient->id]))
+                                                    <span class="badge bg-info text-dark ms-1" title="Used a free referral code">Comped</span>
+                                                @endif
                                             </td>
                                             <td>{{ $patient->email ?? '—' }}</td>
                                             <td><code>{{ $ack->ip_address }}</code></td>
@@ -404,6 +422,9 @@
                                                     <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
                                                 @elseif($patient && $patient->verification_method === 'manual_fallback')
                                                     <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                @endif
+                                                @if($patient && isset($compedPatientIds[$patient->id]))
+                                                    <span class="badge bg-info text-dark ms-1" title="Used a free referral code">Comped</span>
                                                 @endif
                                             </td>
                                                             <td>{{ $patient->email ?? '—' }}</td>
@@ -465,6 +486,9 @@
                                                     <span class="text-success ms-1" title="ID verified via Didit">&#9679;</span>
                                                 @elseif($patient && $patient->verification_method === 'manual_fallback')
                                                     <span class="text-warning ms-1" title="ID verified via manual upload">&#128737;</span>
+                                                @endif
+                                                @if($patient && isset($compedPatientIds[$patient->id]))
+                                                    <span class="badge bg-info text-dark ms-1" title="Used a free referral code">Comped</span>
                                                 @endif
                                             </td>
                                                                             <td>{{ $patient->email ?? '—' }}</td>

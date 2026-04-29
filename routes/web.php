@@ -36,12 +36,17 @@ Route::group(['middleware' => 'auth'], function () {
     Route::post('/dashboard/reject_patient/{id}', 'App\Http\Controllers\DashboardController@rejectPatient');
     Route::get('/dashboard/approve_all_patients/', 'App\Http\Controllers\DashboardController@approveAllPatients');
     Route::get('/dashboard/analytics', 'App\Http\Controllers\DashboardController@analytics');
+    Route::get('/dashboard/marketing', 'App\Http\Controllers\DashboardController@marketingDashboard');
+    Route::post('/dashboard/marketing/codes', 'App\Http\Controllers\DashboardController@createDiscountCode');
+    Route::post('/dashboard/marketing/qr', 'App\Http\Controllers\DashboardController@generateMarketingQr');
     Route::get('/dashboard/flagged_pdf/{id}', 'App\Http\Controllers\DashboardController@downloadFlaggedPdf');
     Route::post('/dashboard/abandoned-intake/{id}/contact', 'App\Http\Controllers\DashboardController@markAbandonedContacted');
 });
 
 Route::post('/ajax/record_acknowledgement', 'App\Http\Controllers\UsersController@recordAcknowledgement');
 Route::post('/ajax/track-form-start', 'App\Http\Controllers\UsersController@trackFormStart');
+Route::post('/ajax/track-utm-visit', 'App\Http\Controllers\UtmController@trackVisit');
+Route::post('/ajax/validate-code', 'App\Http\Controllers\ReferralCodeController@validateCode');
 Route::post('/ajax/didit-session', 'App\Http\Controllers\DiditController@createSession');
 Route::post('/ajax/didit-status', 'App\Http\Controllers\DiditController@checkStatus');
 Route::post('/webhook/didit', 'App\Http\Controllers\DiditController@webhook');

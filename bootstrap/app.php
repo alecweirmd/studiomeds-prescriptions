@@ -17,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             '/webhook/didit',
             '/ajax/track-form-start',
+            '/ajax/track-utm-visit',
+            '/ajax/validate-code',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

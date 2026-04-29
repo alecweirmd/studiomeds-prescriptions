@@ -6,6 +6,9 @@ use App\Models\MaintStates;
 use App\Models\User;
 use App\Models\PatientsCQI;
 use App\Models\Patients;
+use App\Models\UtmVisit;
+use App\Models\DiscountCode;
+use App\Models\DiscountRedemption;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -268,32 +271,75 @@ class UsersController extends Controller
             return back()->withErrors(['patient' => 'Something went wrong.  Please refresh the page and try again.'])->withInput();
         }
 
-        $request->validate([
-            'card_number'    => ['required', 'regex:/^\d{13,19}$/'],
-            'card_exp_month' => 'required|digits:2',
-            'card_exp_year'  => 'required|digits:2',
-            'card_cvc'       => ['required', 'regex:/^\d{3,4}$/'],
-            'payment_amount' => 'required|numeric|min:0.01',
-        ], [
-            'card_number.regex'     => 'Please enter a valid card number.',
-            'card_exp_month.digits' => 'Expiration month must be 2 digits.',
-            'card_exp_year.digits'  => 'Expiration year must be 2 digits.',
-            'card_cvc.regex'        => 'Please enter a valid CVC.',
-        ]);
+        // ── Resolve referral / discount code (server-side authoritative) ──
+        $appliedCodeRaw = trim((string) $request->input('applied_code', ''));
+        $resolvedCode   = null;
+        $isFreeFlow     = false;
+        $discountAmount = 0.00;
+        $finalAmount    = 35.00;
 
-        $paymentSuccess = app(\App\Services\AuthorizeNetService::class)
-            ->chargeOneTime(
-                $request->card_number,
-                $request->card_exp_month,
-                $request->card_exp_year,
-                $request->card_cvc,
-                $request->payment_amount
-            );
+        if ($appliedCodeRaw !== '') {
+            $resolvedCode = DiscountCode::whereRaw('LOWER(code_string) = ?', [strtolower($appliedCodeRaw)])->first();
 
-        if (!$paymentSuccess['success']) {
-            return back()
-                ->withErrors(['payment' => 'Payment failed: ' . $paymentSuccess['message']])
-                ->withInput();
+            if (!$resolvedCode || $resolvedCode->status !== 'active' ||
+                $resolvedCode->usage_count >= $resolvedCode->usage_cap ||
+                ($resolvedCode->expiration_date && $resolvedCode->expiration_date->isBefore(now()->startOfDay()))) {
+
+                if ($resolvedCode) {
+                    DiscountRedemption::create([
+                        'discount_code_id' => $resolvedCode->id,
+                        'session_id'       => $request->input('utm_session_id'),
+                        'attempt_outcome'  => $resolvedCode->status === 'expired'
+                            ? 'failed_expired'
+                            : ($resolvedCode->usage_count >= $resolvedCode->usage_cap ? 'failed_exhausted' : 'failed_invalid'),
+                    ]);
+                }
+                return back()->withErrors(['applied_code' => 'The referral code is no longer valid. Please remove it and try again.'])->withInput();
+            }
+
+            if ($resolvedCode->discount_type === 'free') {
+                $isFreeFlow     = true;
+                $discountAmount = 35.00;
+                $finalAmount    = 0.00;
+            } elseif ($resolvedCode->discount_type === 'fixed_dollar_off') {
+                $discountAmount = min((float) $resolvedCode->discount_value, 35.00);
+                $finalAmount    = round(35.00 - $discountAmount, 2);
+            } elseif ($resolvedCode->discount_type === 'percent_off') {
+                $discountAmount = round(35.00 * ((float) $resolvedCode->discount_value / 100), 2);
+                $finalAmount    = round(35.00 - $discountAmount, 2);
+            }
+        }
+
+        if (!$isFreeFlow) {
+            $request->validate([
+                'card_number'    => ['required', 'regex:/^\d{13,19}$/'],
+                'card_exp_month' => 'required|digits:2',
+                'card_exp_year'  => 'required|digits:2',
+                'card_cvc'       => ['required', 'regex:/^\d{3,4}$/'],
+                'payment_amount' => 'required|numeric|min:0.01',
+            ], [
+                'card_number.regex'     => 'Please enter a valid card number.',
+                'card_exp_month.digits' => 'Expiration month must be 2 digits.',
+                'card_exp_year.digits'  => 'Expiration year must be 2 digits.',
+                'card_cvc.regex'        => 'Please enter a valid CVC.',
+            ]);
+
+            $chargeAmount = $resolvedCode ? $finalAmount : (float) $request->payment_amount;
+
+            $paymentSuccess = app(\App\Services\AuthorizeNetService::class)
+                ->chargeOneTime(
+                    $request->card_number,
+                    $request->card_exp_month,
+                    $request->card_exp_year,
+                    $request->card_cvc,
+                    $chargeAmount
+                );
+
+            if (!$paymentSuccess['success']) {
+                return back()
+                    ->withErrors(['payment' => 'Payment failed: ' . $paymentSuccess['message']])
+                    ->withInput();
+            }
         }
 
             $patient->first_name = $request->first_name;
@@ -411,6 +457,56 @@ class UsersController extends Controller
                 $formStart->patient_id = $patient->id;
                 $formStart->abandoned_at = null;
                 $formStart->save();
+            }
+
+            // ── Record discount redemption + bump usage count ─────────────
+            if ($resolvedCode) {
+                try {
+                    DB::transaction(function () use ($resolvedCode, $patient, $request, $discountAmount) {
+                        $locked = DiscountCode::where('id', $resolvedCode->id)->lockForUpdate()->first();
+                        if ($locked) {
+                            $locked->usage_count = ($locked->usage_count ?? 0) + 1;
+                            if ($locked->usage_cap > 0 && $locked->usage_count >= $locked->usage_cap) {
+                                $locked->status = 'exhausted';
+                            }
+                            $locked->save();
+                        }
+                        DiscountRedemption::create([
+                            'discount_code_id'        => $resolvedCode->id,
+                            'patient_id'              => $patient->id,
+                            'session_id'              => $request->input('utm_session_id'),
+                            'attempt_outcome'         => 'success',
+                            'discount_amount_applied' => round($discountAmount, 2),
+                            'redeemed_at'             => now(),
+                        ]);
+                    });
+                } catch (\Exception $e) {
+                    Log::error('Failed to record discount redemption for patient ' . $patient->id . ': ' . $e->getMessage());
+                }
+            }
+
+            // ── Mark UTM visit completed ──────────────────────────────────
+            $utmSessionId = trim((string) $request->input('utm_session_id', ''));
+            if ($utmSessionId !== '') {
+                try {
+                    $visit = UtmVisit::where('session_id', $utmSessionId)->first();
+                    if ($visit) {
+                        $visit->completed     = true;
+                        $visit->patient_id    = $patient->id;
+                        $visit->last_touch_at = now();
+                        $visit->save();
+                    } else {
+                        UtmVisit::create([
+                            'session_id'     => $utmSessionId,
+                            'first_touch_at' => now(),
+                            'last_touch_at'  => now(),
+                            'completed'      => true,
+                            'patient_id'     => $patient->id,
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to update UTM visit for patient ' . $patient->id . ': ' . $e->getMessage());
+                }
             }
 
             $emailmessage = "New Submission:" . $patient->first_name . ' ' . $patient->last_name;
