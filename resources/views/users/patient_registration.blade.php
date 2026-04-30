@@ -27,7 +27,7 @@
 
     #scrollHint {
         position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%);
-        z-index: 1500; pointer-events: none;
+        z-index: 1040; pointer-events: none;
         background: rgba(255,255,255,0.9);
         color: #1a9cd8;
         padding: 0.4rem 0.9rem; border-radius: 999px;
@@ -672,7 +672,7 @@
                     document.body.scrollHeight, document.documentElement.scrollHeight,
                     document.body.offsetHeight, document.documentElement.offsetHeight
                 );
-                if (scrollY + viewport >= docHeight - 100) {
+                if (scrollY + viewport >= docHeight - 400) {
                     hide();
                 }
             };
