@@ -9,6 +9,7 @@ class FormStart extends Model
     protected $fillable = [
         'email',
         'ip_address',
+        'session_id',
         'started_at',
         'completed',
         'patient_id',

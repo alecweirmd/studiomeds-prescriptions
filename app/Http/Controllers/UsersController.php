@@ -342,6 +342,11 @@ class UsersController extends Controller
             }
         }
 
+        $authorizeNetTxnId = $paymentSuccess['transaction_id'] ?? null;
+
+        try {
+            DB::beginTransaction();
+
             $patient->first_name = $request->first_name;
             $patient->last_name = $request->last_name;
             $patient->date_of_birth = $request->date_of_birth;
@@ -452,12 +457,45 @@ class UsersController extends Controller
             }
 
             $formStart = FormStart::where('email', $patient->email)->first();
+
+            if (!$formStart) {
+                $sessionId = trim((string) $request->input('utm_session_id', ''));
+                if ($sessionId !== '') {
+                    $formStart = FormStart::where('session_id', $sessionId)
+                        ->where('completed', false)
+                        ->orderByDesc('started_at')
+                        ->first();
+                }
+            }
+
+            if (!$formStart) {
+                $ip = $request->input('user_ip') ?: $request->ip();
+                if ($ip) {
+                    $formStart = FormStart::where('ip_address', $ip)
+                        ->where('completed', false)
+                        ->orderByDesc('started_at')
+                        ->first();
+                }
+            }
+
             if ($formStart) {
                 $formStart->completed = true;
                 $formStart->patient_id = $patient->id;
                 $formStart->abandoned_at = null;
                 $formStart->save();
             }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::critical('Post-payment write failure in store_patient', [
+                'patient_email'                => $request->input('email'),
+                'authorize_net_transaction_id' => $authorizeNetTxnId,
+                'error'                        => $e->getMessage(),
+                'trace'                        => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
 
             // ── Record discount redemption + bump usage count ─────────────
             if ($resolvedCode) {
@@ -569,18 +607,27 @@ class UsersController extends Controller
             return response('OK', 200);
         }
 
+        $sessionId = trim((string) $request->input('session_id', ''));
+        $sessionId = $sessionId !== '' ? $sessionId : null;
+
+        $ipAddress = $request->input('ip_address') ?: $request->ip();
+
         $existing = FormStart::where('email', $email)
             ->where('completed', false)
             ->first();
 
         if ($existing) {
             $existing->started_at = now();
-            $existing->ip_address = $request->input('ip_address') ?: $request->ip();
+            $existing->ip_address = $ipAddress;
+            if ($sessionId) {
+                $existing->session_id = $sessionId;
+            }
             $existing->save();
         } else {
             FormStart::create([
                 'email'      => $email,
-                'ip_address' => $request->input('ip_address') ?: $request->ip(),
+                'ip_address' => $ipAddress,
+                'session_id' => $sessionId,
                 'started_at' => now(),
                 'completed'  => false,
             ]);

@@ -752,7 +752,8 @@
                 dataType: 'json',
                 data: {
                     email: email,
-                    ip_address: $('#user_ip').val()
+                    ip_address: $('#user_ip').val(),
+                    session_id: $('#utm_session_id').val()
                 }
             });
         });
