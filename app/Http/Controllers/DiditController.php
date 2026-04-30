@@ -81,13 +81,11 @@ class DiditController extends Controller
                 $liveness   = $decision['liveness_checks'] ?? [];
 
                 $frontUrl   = $idChecks[0]['front_image'] ?? null;
-                $backUrl    = $idChecks[0]['back_image'] ?? null;
                 $selfieUrl  = $liveness[0]['reference_image'] ?? null;
 
                 $baseDir    = "uploads/{$patient->id}/didit";
 
                 $frontPath  = $this->downloadDiditImage($frontUrl,  "{$baseDir}/front.jpg",  $patient->id, 'front');
-                $this->downloadDiditImage($backUrl, "{$baseDir}/back.jpg", $patient->id, 'back');
                 $selfiePath = $this->downloadDiditImage($selfieUrl, "{$baseDir}/selfie.jpg", $patient->id, 'selfie');
 
                 if ($frontPath)  { $patient->drivers_license = $frontPath; }

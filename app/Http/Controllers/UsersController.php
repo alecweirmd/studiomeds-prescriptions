@@ -395,10 +395,16 @@ class UsersController extends Controller
                 Log::warning("No selfie file received for patient {$patient->id}");
             }
 
-            $patient->update([
-                'drivers_license' => $driversLicensePath,
-                'patient_photo' => $selfiePath,
-            ]);
+            $imageUpdates = [];
+            if ($driversLicensePath !== null) {
+                $imageUpdates['drivers_license'] = $driversLicensePath;
+            }
+            if ($selfiePath !== null) {
+                $imageUpdates['patient_photo'] = $selfiePath;
+            }
+            if (!empty($imageUpdates)) {
+                $patient->update($imageUpdates);
+            }
 
             $answers = new PatientsCQI();
             $answers->status = 0; //not approved
