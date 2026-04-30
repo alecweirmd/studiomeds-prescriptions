@@ -37,7 +37,6 @@
         opacity: 0; transition: opacity 0.3s ease;
     }
     #scrollHint.visible { opacity: 1; }
-    body.modal-open #scrollHint { display: none; }
     #scrollHint .scroll-chevron {
         display: inline-block;
         animation: scrollHintBounce 1.4s ease-in-out infinite;
@@ -655,29 +654,34 @@
 @section('script')
 <script>
     $(document).ready(function() {
-        // Scroll-down hint — visible only if the page loads at the top
+        // Scroll-down hint — guides the user through the terms modal's
+        // internal scroll to the acknowledgement checkbox at the bottom.
         (function() {
-            var $hint = $('#scrollHint');
-            if (!$hint.length) { return; }
-            if ((window.scrollY || window.pageYOffset || 0) > 5) { return; }
-            $hint.addClass('visible');
-            var hide = function() {
-                $hint.removeClass('visible');
-                window.removeEventListener('scroll', onScroll);
-                setTimeout(function() { $hint.remove(); }, 400);
-            };
-            var onScroll = function() {
-                var scrollY  = window.scrollY || window.pageYOffset || 0;
-                var viewport = window.innerHeight || document.documentElement.clientHeight;
-                var docHeight = Math.max(
-                    document.body.scrollHeight, document.documentElement.scrollHeight,
-                    document.body.offsetHeight, document.documentElement.offsetHeight
-                );
-                if (scrollY + viewport >= docHeight - 400) {
-                    hide();
+            var $hint  = $('#scrollHint');
+            var $modal = $('#termsModal');
+            if (!$hint.length || !$modal.length) { return; }
+            var $modalBody = $modal.find('.modal-body');
+
+            function checkPosition() {
+                var el = $modalBody[0];
+                if (!el) { return; }
+                if (el.scrollTop + el.clientHeight >= el.scrollHeight - 80) {
+                    $hint.removeClass('visible');
+                } else {
+                    $hint.addClass('visible');
                 }
-            };
-            window.addEventListener('scroll', onScroll, { passive: true });
+            }
+
+            $modal.on('shown.bs.modal', function() {
+                $hint.addClass('visible');
+                $modalBody.on('scroll.scrollHint', checkPosition);
+                checkPosition();
+            });
+
+            $modal.on('hidden.bs.modal', function() {
+                $hint.removeClass('visible');
+                $modalBody.off('scroll.scrollHint');
+            });
         })();
 
         // Step indicator helper — purely visual, no impact on form logic
