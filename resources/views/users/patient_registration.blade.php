@@ -643,7 +643,7 @@
 </div>
 
 <div id="scrollHint" aria-hidden="true">
-    <span>Scroll down to get started</span>
+    <span>Keep scrolling to get started</span>
     <span class="scroll-chevron">&#x25BC;</span>
 </div>
 
@@ -665,7 +665,17 @@
                 window.removeEventListener('scroll', onScroll);
                 setTimeout(function() { $hint.remove(); }, 400);
             };
-            var onScroll = function() { hide(); };
+            var onScroll = function() {
+                var scrollY  = window.scrollY || window.pageYOffset || 0;
+                var viewport = window.innerHeight || document.documentElement.clientHeight;
+                var docHeight = Math.max(
+                    document.body.scrollHeight, document.documentElement.scrollHeight,
+                    document.body.offsetHeight, document.documentElement.offsetHeight
+                );
+                if (scrollY + viewport >= docHeight - 100) {
+                    hide();
+                }
+            };
             window.addEventListener('scroll', onScroll, { passive: true });
         })();
 
