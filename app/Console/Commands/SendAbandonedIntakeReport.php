@@ -14,23 +14,22 @@ class SendAbandonedIntakeReport extends Command
 
     public function handle()
     {
-        $yesterday = now()->subDay()->toDateString();
-
-        $count = FormStart::whereDate('abandoned_at', $yesterday)->count();
+        $count = FormStart::whereNotNull('abandoned_at')
+            ->whereNull('contacted_at')
+            ->whereNull('dismissed_at')
+            ->count();
 
         if ($count === 0) {
             return;
         }
 
-        $dateLabel = now()->subDay()->format('F j, Y');
-
-        $body = "Yesterday ({$dateLabel}) there were {$count} abandoned intakes on StudioMeds. "
+        $body = "You currently have {$count} abandoned intakes awaiting follow-up on StudioMeds. "
             . "Log in to review them here: https://prescriptions.studiomeds.com/login";
 
-        Mail::raw($body, function ($m) {
+        Mail::raw($body, function ($m) use ($count) {
             $m->to('admin@studiomeds.com')
               ->from(config('services.admin.from_email'))
-              ->subject('StudioMeds - Abandoned Intake Report');
+              ->subject("StudioMeds - You currently have {$count} abandoned intakes awaiting follow-up");
         });
     }
 }
