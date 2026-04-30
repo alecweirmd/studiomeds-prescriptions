@@ -40,6 +40,7 @@ Route::group(['middleware' => 'auth'], function () {
     Route::post('/dashboard/marketing/codes', 'App\Http\Controllers\DashboardController@createDiscountCode');
     Route::post('/dashboard/marketing/toggle-code/{id}', 'App\Http\Controllers\DashboardController@toggleCode');
     Route::post('/dashboard/marketing/qr', 'App\Http\Controllers\DashboardController@generateMarketingQr');
+    Route::post('/dashboard/marketing/test-email', 'App\Http\Controllers\DashboardController@sendTestEmail');
     Route::get('/dashboard/flagged_pdf/{id}', 'App\Http\Controllers\DashboardController@downloadFlaggedPdf');
 });
 

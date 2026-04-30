@@ -684,4 +684,64 @@ class DashboardController extends Controller
             'url'    => $url,
         ]);
     }
+
+    public function sendTestEmail(Request $request)
+    {
+        if (session()->get('user_type') != 1) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $type = $request->input('type');
+        $to   = 'alecweir@gmail.com';
+
+        $stubPatient = new Patients(['first_name' => 'Alec']);
+
+        $emails = [
+            'abandoned_intake' => [
+                'view'    => 'emails.abandoned_intake',
+                'subject' => '[TEST] We noticed you started a StudioMeds evaluation',
+                'data'    => [],
+            ],
+            'post_approval_followup' => [
+                'view'    => 'emails.post_approval_followup',
+                'subject' => '[TEST] Checking in from StudioMeds',
+                'data'    => ['patient' => $stubPatient],
+            ],
+            'facebook_review_request' => [
+                'view'    => 'emails.facebook_review_request',
+                'subject' => '[TEST] How was your StudioMeds experience?',
+                'data'    => ['patient' => $stubPatient],
+            ],
+            'rejection_reengagement' => [
+                'view'    => 'emails.rejection_reengagement',
+                'subject' => '[TEST] Your StudioMeds eligibility may have changed',
+                'data'    => ['patient' => $stubPatient],
+            ],
+        ];
+
+        if (!isset($emails[$type])) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Unknown email type.',
+            ], 422);
+        }
+
+        $email = $emails[$type];
+
+        try {
+            Mail::send($email['view'], $email['data'], function ($message) use ($to, $email) {
+                $message->to($to)->subject($email['subject']);
+            });
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Test email sent to ' . $to . '.',
+        ]);
+    }
 }

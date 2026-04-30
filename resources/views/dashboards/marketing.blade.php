@@ -39,6 +39,10 @@
                                     data-bs-target="#pane-metrics" type="button" role="tab">
                                 &#x1F4CA; Referral Code Metrics
                             </button>
+                            <button class="nav-link text-start mb-1" id="tab-test-emails" data-bs-toggle="pill"
+                                    data-bs-target="#pane-test-emails" type="button" role="tab">
+                                &#x2709; Test Emails
+                            </button>
                         </div>
                     </div>
 
@@ -316,6 +320,61 @@
                                 @endif
                             </div>
 
+                            {{-- Test Emails --}}
+                            <div class="tab-pane fade" id="pane-test-emails" role="tabpanel">
+                                <h5 class="mb-3">Test Emails</h5>
+                                <p class="text-muted">All test emails are sent to <code>alecweir@gmail.com</code>.</p>
+
+                                <div id="testEmailStatus" class="mb-3"></div>
+
+                                <div class="row g-3" style="max-width:880px;">
+                                    <div class="col-md-6">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title">Abandoned Intake Outreach</h6>
+                                                <p class="card-text text-muted small">Sent to patients who started an intake but did not complete it.</p>
+                                                <button type="button" class="btn btn-primary test-email-btn" data-email-type="abandoned_intake">
+                                                    Send Test: Abandoned Intake
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title">3-Day Post-Approval Follow-up</h6>
+                                                <p class="card-text text-muted small">Sent 3 days after a patient is approved.</p>
+                                                <button type="button" class="btn btn-primary test-email-btn" data-email-type="post_approval_followup">
+                                                    Send Test: Post-Approval Follow-up
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title">7-Day Facebook Review Request</h6>
+                                                <p class="card-text text-muted small">Sent 7 days after approval requesting a Facebook review.</p>
+                                                <button type="button" class="btn btn-primary test-email-btn" data-email-type="facebook_review_request">
+                                                    Send Test: Facebook Review Request
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title">90-Day Rejection Re-engagement</h6>
+                                                <p class="card-text text-muted small">Sent 90 days after a rejection inviting another evaluation.</p>
+                                                <button type="button" class="btn btn-primary test-email-btn" data-email-type="rejection_reengagement">
+                                                    Send Test: Rejection Re-engagement
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -458,6 +517,40 @@ $(document).ready(function() {
         }).fail(function() {
             $btn.prop('disabled', false).html(prevBtnHtml);
             alert('Could not toggle code. Please try again.');
+        });
+    });
+
+    // ── Test Emails ────────────────────────────────────────────────────
+    $(document).on('click', '.test-email-btn', function() {
+        var $btn = $(this);
+        var type = $btn.data('email-type');
+        var prevText = $btn.text();
+        var $status = $('#testEmailStatus');
+        $status.empty();
+        $btn.prop('disabled', true).text('Sending…');
+
+        $.ajax({
+            url: '/dashboard/marketing/test-email',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                type:   type,
+            },
+        }).done(function(resp) {
+            if (resp && resp.success) {
+                $status.html('<div class="alert alert-success mb-0">' + (resp.message || 'Test email sent.') + '</div>');
+            } else {
+                $status.html('<div class="alert alert-danger mb-0">' + ((resp && resp.error) ? resp.error : 'Could not send test email.') + '</div>');
+            }
+        }).fail(function(xhr) {
+            var msg = 'Could not send test email.';
+            if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
+                msg = xhr.responseJSON.error;
+            }
+            $status.html('<div class="alert alert-danger mb-0">' + msg + '</div>');
+        }).always(function() {
+            $btn.prop('disabled', false).text(prevText);
         });
     });
 
