@@ -79,9 +79,10 @@ class DiditController extends Controller
                 $decision   = $payload['decision'] ?? [];
                 $idChecks   = $decision['id_verifications'] ?? [];
                 $liveness   = $decision['liveness_checks'] ?? [];
+                $faceMatches = $decision['face_matches'] ?? [];
 
                 $frontUrl   = $idChecks[0]['front_image'] ?? null;
-                $selfieUrl  = $liveness[0]['reference_image'] ?? null;
+                $selfieUrl  = $faceMatches[0]['source_image'] ?? $liveness[0]['reference_image'] ?? null;
 
                 $baseDir    = "uploads/{$patient->id}/didit";
 
