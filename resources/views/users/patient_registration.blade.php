@@ -272,6 +272,31 @@
                 {{-- Everything below verification is hidden until verification is complete --}}
                 <div id="post-verification-section" style="display:none;">
 
+                {{-- PROCEDURE SELECTION --}}
+                <div class="row g-3 p-2" id="procedure-section">
+                    <h3>What procedure are you having?</h3>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input class="form-check-input procedure-radio" type="radio" name="procedure_type" id="procedure_tattoo" value="tattoo" {{ old('procedure_type') === 'tattoo' ? 'checked' : '' }} required>
+                            <label class="form-check-label" for="procedure_tattoo">Tattoo</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input procedure-radio" type="radio" name="procedure_type" id="procedure_brow_pmu" value="brow_pmu" {{ old('procedure_type') === 'brow_pmu' ? 'checked' : '' }} required>
+                            <label class="form-check-label" for="procedure_brow_pmu">Brow PMU</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input procedure-radio" type="radio" name="procedure_type" id="procedure_eyeliner" value="eyeliner" {{ old('procedure_type') === 'eyeliner' ? 'checked' : '' }} required>
+                            <label class="form-check-label" for="procedure_eyeliner">Eyeliner</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input procedure-radio" type="radio" name="procedure_type" id="procedure_lip_blush" value="lip_blush" {{ old('procedure_type') === 'lip_blush' ? 'checked' : '' }} required>
+                            <label class="form-check-label" for="procedure_lip_blush">Lip Blush</label>
+                        </div>
+                        @error('procedure_type') <div class="text-danger small">{{ $message }}</div> @enderror
+                    </div>
+                </div>
+
+                <div id="medical-questions-wrapper" style="display:none;">
                 <h3>Medical Screening Questions</h3>
 
                 <div class="py-2">
@@ -443,7 +468,83 @@
                             </div>
                         </div>
                     </div>
+
+                    {{-- PROCEDURE-SPECIFIC ADD-ON QUESTIONS (shown only for matching procedure_type) --}}
+                    <div class="procedure-addon" id="lip-blush-addons" data-procedure="lip_blush" style="display:none;">
+                        <div class="mb-3">
+                            <label class="form-label">13. Do you currently have an active cold sore, fever blister, or herpes simplex outbreak on or near your lips?</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="lip_cold_sore_active" id="lip_cold_sore_active_yes" value="1" {{ old('lip_cold_sore_active') === '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="lip_cold_sore_active_yes">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="lip_cold_sore_active" id="lip_cold_sore_active_no" value="0" {{ old('lip_cold_sore_active') === '0' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="lip_cold_sore_active_no">No</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="procedure-addon" id="eyeliner-addons" data-procedure="eyeliner" style="display:none;">
+                        <div class="mb-3">
+                            <label class="form-label">13. Do you currently have an active eye infection, blepharitis, conjunctivitis (pink eye), or stye?</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="eye_infection_active" id="eye_infection_active_yes" value="1" {{ old('eye_infection_active') === '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="eye_infection_active_yes">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="eye_infection_active" id="eye_infection_active_no" value="0" {{ old('eye_infection_active') === '0' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="eye_infection_active_no">No</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">14. Have you had eye surgery (LASIK, PRK, cataract, or other) within the past 6 months?</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="recent_eye_surgery" id="recent_eye_surgery_yes" value="1" {{ old('recent_eye_surgery') === '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="recent_eye_surgery_yes">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="recent_eye_surgery" id="recent_eye_surgery_no" value="0" {{ old('recent_eye_surgery') === '0' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="recent_eye_surgery_no">No</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">15. Do you currently wear contact lenses and are unable to remove them and switch to glasses for the day of your procedure and 24 hours afterward?</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="contacts_cannot_remove" id="contacts_cannot_remove_yes" value="1" {{ old('contacts_cannot_remove') === '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="contacts_cannot_remove_yes">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="contacts_cannot_remove" id="contacts_cannot_remove_no" value="0" {{ old('contacts_cannot_remove') === '0' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="contacts_cannot_remove_no">No</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">16. Do you have severe dry eye syndrome that requires daily prescription eye drops or punctal plugs?</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="severe_dry_eye" id="severe_dry_eye_yes" value="1" {{ old('severe_dry_eye') === '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="severe_dry_eye_yes">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="severe_dry_eye" id="severe_dry_eye_no" value="0" {{ old('severe_dry_eye') === '0' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="severe_dry_eye_no">No</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+                </div>{{-- end medical-questions-wrapper --}}
 
                 </div>{{-- end post-verification-section --}}
             </div>
@@ -791,19 +892,60 @@
         });
 
 
-        const medicalFields = ['lidocaine','bactine','broken_skin','eczema','heart_rhythm','liver_disease','seizures','pregnant','antiarrhythmic','seizure_meds','fainted','methemoglobinemia'];
+        const baseMedicalFields = ['lidocaine','bactine','broken_skin','eczema','heart_rhythm','liver_disease','seizures','pregnant','antiarrhythmic','seizure_meds','fainted','methemoglobinemia'];
+        const procedureAddOnFields = {
+            lip_blush: ['lip_cold_sore_active'],
+            eyeliner:  ['eye_infection_active','recent_eye_surgery','contacts_cannot_remove','severe_dry_eye'],
+            tattoo:    [],
+            brow_pmu:  [],
+        };
+
+        function selectedProcedure() {
+            return $('input[name="procedure_type"]:checked').val() || '';
+        }
+
+        function currentMedicalFields() {
+            var addOns = procedureAddOnFields[selectedProcedure()] || [];
+            return baseMedicalFields.concat(addOns);
+        }
 
         function anyYesSelected() {
-            return medicalFields.some(function(name) {
+            return currentMedicalFields().some(function(name) {
                 return $('input[name="' + name + '"]:checked').val() === '1';
             });
         }
 
         function allQuestionsAnswered() {
-            return medicalFields.every(function(name) {
+            return currentMedicalFields().every(function(name) {
                 return $('input[name="' + name + '"]:checked').length > 0;
             });
         }
+
+        // Show/hide procedure-specific add-on questions and clear stale values on hidden ones.
+        // Also gate the entire medical-questions block on procedure selection so users can't
+        // answer CQI questions before they've identified their procedure.
+        function syncProcedureAddOns() {
+            var procedure = selectedProcedure();
+            if (procedure) {
+                $('#medical-questions-wrapper').show();
+            } else {
+                $('#medical-questions-wrapper').hide();
+            }
+            $('.procedure-addon').each(function() {
+                var $block = $(this);
+                if ($block.data('procedure') === procedure) {
+                    $block.show();
+                } else {
+                    $block.hide();
+                    $block.find('input[type="radio"]').prop('checked', false);
+                    // clear any red-outline error styling from previously-required fields
+                    $block.find('.mb-3, .py-2').css({ 'outline': '', 'border-radius': '', 'padding': '' });
+                }
+            });
+        }
+        $(document).on('change', 'input[name="procedure_type"]', syncProcedureAddOns);
+        // Run once on load to handle old() repopulation after a server-side validation error
+        syncProcedureAddOns();
 
         // Prevent the year portion of the date input from exceeding 4 digits
         $('#date_of_birth').on('change', function() {
@@ -1010,11 +1152,23 @@
                 return;
             }
 
-            // 2. All 12 medical questions must be answered
+            // 2a. Procedure type must be selected
+            $('#procedure-incomplete-error').remove();
+            if (!selectedProcedure()) {
+                e.preventDefault();
+                const $procTarget = $('#procedure-section');
+                $procTarget.css({ 'outline': '2px solid #dc3545', 'border-radius': '4px', 'padding': '8px' });
+                $('<div id="procedure-incomplete-error" class="alert alert-danger mt-2">Please select your procedure type before submitting.</div>')
+                    .insertBefore($procTarget);
+                $procTarget[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            // 2b. All medical questions for the selected procedure must be answered
             $('#medical-incomplete-error').remove();
             if (!allQuestionsAnswered()) {
                 e.preventDefault();
-                const firstUnanswered = medicalFields.find(function(name) {
+                const firstUnanswered = currentMedicalFields().find(function(name) {
                     return $('input[name="' + name + '"]:checked').length === 0;
                 });
                 const target = $('input[name="' + firstUnanswered + '"]').closest('.mb-3, .py-2');
@@ -1040,7 +1194,7 @@
         // "I Understand" closes warning modal and records the acknowledgement for audit
         $('#medicalWarningAcknowledge').on('click', function() {
             var triggeredQuestions = [];
-            ['lidocaine','bactine','broken_skin','eczema','heart_rhythm','liver_disease','seizures','pregnant','antiarrhythmic','seizure_meds','fainted','methemoglobinemia'].forEach(function(name) {
+            currentMedicalFields().forEach(function(name) {
                 if ($('input[name="' + name + '"]:checked').val() === '1') {
                     triggeredQuestions.push(name);
                 }
