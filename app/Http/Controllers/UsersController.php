@@ -641,7 +641,8 @@ class UsersController extends Controller
     {
 
         $patient = new Patients();
-        $patient->user_ip = $request->user_ip;
+        // Server-detected IP for audit trail integrity (changed from client-supplied $request->user_ip in session 3)
+        $patient->user_ip = $request->ip();
         $patient->terms_agree_check = $request->terms_agree_check;
         $patient->agree_time = date('Y-m-d H:i:s');
         $patient->email = '';

@@ -564,68 +564,65 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Terms & Conditions</h3>
+                <h3 class="modal-title">Terms, Privacy & Medical Consent</h3>
             </div>
             <div class="modal-body" style="max-height:500px; overflow-y:scroll; ">
                 <div class="row g-3">
                     <div class="col-md-12">
                         <h3>Service Summary</h3>
                         <p><strong>Virtual Medical Evaluation</strong></p>
-                        <p>You are purchasing a professional virtual medical evaluation performed by a licensed physician. If clinically appropriate, a prescription may be issued. StudioMeds, PLLC does not sell, dispense, or ship medication.</p>
+                        <p>You are purchasing a professional virtual medical evaluation performed by a Michigan-licensed physician. If clinically appropriate, the physician will issue a prescription authorizing your use of a specific over-the-counter topical anesthetic during your procedure. StudioMeds, PLLC does not sell, dispense, or ship medication.</p>
+                        <p><strong>Price and Billing</strong></p>
+                        <p>Price: $35.00 per evaluation (one-time fee). No subscriptions. No recurring charges. Cash-pay only.</p>
+                        <p>You will not be charged if the physician determines you are not medically appropriate to receive the prescription.</p>
                     </div>
                 </div>
                 <div class="row g-3">
                     <div class="col-md-12">
-                        <h3>Price & Billing Disclosure</h3>
-                        <p><strong>Price: $35.00 (one-time fee)</strong></p>
-                        <p>No subscriptions. No recurring charges.</p>
+                        <h3>Terms and Conditions</h3>
+                        <p>You are purchasing a virtual medical evaluation, not a medication or product. If clinically appropriate, the physician may issue a prescription. Approval is not guaranteed. StudioMeds does not sell or dispense medication and is not a pharmacy. Procedures themselves are performed by separately licensed body art professionals; StudioMeds does not perform procedures.</p>
+                        <p>You will not be charged if you are not medically appropriate. Once your evaluation is completed and the prescription has been delivered to your email address, the service is considered fully rendered and no refund will be issued, except for narrow circumstances described in the Refund Policy (such as duplicate charges or technical delivery failures).</p>
+                        <p>By proceeding, you consent to electronic communications, including delivery of your prescription by email. Disputes are resolved by good-faith negotiation followed by binding arbitration under the American Arbitration Association's Consumer Arbitration Rules, except that you may bring an individual claim in small claims court if it is within that court's jurisdiction. Class actions are waived. Michigan law governs.</p>
+                        <p><a href="{{ url('/pdfs/TERMS_AND_CONDITIONS.pdf') }}" target="_blank" rel="noopener"> View full Terms and Conditions</a></p>
                     </div>
                 </div>
                 <div class="row g-3">
                     <div class="col-md-12">
-                        <h3>Refund Policy Summary</h3>
-                        <ul>
-                            <li>You will <strong>not be charged</strong> if you are deemed <strong>not appropriate for a virtual medical assessment for over the counter topical anesthetic prescription.</strong></li>
-                            <li>Once your evaluation is completed and a prescription is issued, <strong>no refunds are provided once the clinic intake questionnaire has been submitted.</strong></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <h3>Terms & Conditions</h3>
-                        <p><i>You are purchasing a <strong>virtual medical evaluation</strong>, not a medication or product. If clinically appropriate, a prescription may be issued at the physician’s discretion; approval is not guaranteed. StudioMeds does not sell or dispense medication and is not a pharmacy.</i></p>
-                        <p><i>You will <strong>not be charged</strong> if you are not appropriate for a virtual medical assessment. Once your evaluation is completed and a prescription is issued, the service is fully rendered and <strong>no refunds are provided</strong>.</i></p>
-                        <p><i>By proceeding, you consent to electronic communications and agree that disputes are resolved through binding arbitration under Michigan law.</i></p>
-                        <p><a href="{{ url('/pdfs/TERMS AND CONDITIONS.pdf') }}" target="_blank" rel="noopener"> View full Terms & Conditions</a></p>
-                    </div>
-                </div>
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <h3>Privacy Policy & Electronic Communication Consent</h3>
-                        <p>StudioMeds collects personal, health, and technical information you provide in order to conduct your virtual medical evaluation, determine eligibility for a prescription, and deliver service-related communications, including prescription delivery by email.</p>
-                        <p>Your information is <strong>not sold</strong> and is shared only with licensed physicians, required service providers, payment processors, and regulatory or legal authorities when necessary. StudioMeds uses reasonable safeguards to protect your information, though no system is completely secure.</p>
+                        <h3>Privacy Policy</h3>
+                        <p>StudioMeds is operated by a Michigan-licensed physician and is subject to Michigan physician confidentiality law and the Michigan Medical Records Access Act. We collect identification, health, and limited payment confirmation information necessary to conduct your evaluation, issue and deliver your prescription, and maintain the medical records that Michigan law requires us to keep.</p>
+                        <p>We do not sell your information. We share your information only with the prescribing physician, with a limited set of service providers required to operate the platform (each contractually bound to protect your information), with the body art facility as required by Michigan body art regulations (this happens at your direction when you provide the prescription to your artist), and with regulatory or legal authorities when required by law.</p>
+                        <p>You have the right to access your records, request correction of inaccurate information, request a copy in portable format, and request reasonable restrictions on disclosure. To exercise these rights, contact admin@studiomeds.com.</p>
+                        <p>In the event your information is acquired by an unauthorized party, we will notify you consistent with Michigan's Identity Theft Protection Act.</p>
                         <p>By proceeding, you consent to the collection, use, and secure handling of your information as described in the Privacy Policy.</p>
-                        <p><a href="{{ url('/pdfs/PRIVACY POLICY.pdf') }}" target="_blank" rel="noopener"> View full Privacy Policy</a></p>
+                        <p><a href="{{ url('/pdfs/PRIVACY_POLICY.pdf') }}" target="_blank" rel="noopener"> View full Privacy Policy</a></p>
                     </div>
                 </div>
                 <div class="row g-3">
                     <div class="col-md-12">
                         <h3>Patient Consent for Clinical Intake and Treatment</h3>
-                        <p>You are completing a clinical intake questionnaire to allow a licensed provider to determine whether it is medically appropriate to prescribe an over-the-counter topical anesthetic. Approval is not guaranteed, and the provider is evaluating eligibility for the medication only and is not performing your procedure.</p>
-                        <p>You understand that these medications must be used only as prescribed and that improper use—including excessive dosing, combining products, prolonged application, or use on compromised skin—may result in serious injury or death. You agree to follow all instructions and accept responsibility for ensuring proper use.</p>
-                        <p>You acknowledge that use of these medications for body art or cosmetic procedures is off-label and not FDA-approved for this purpose, and that such use carries known and potential risks. By proceeding, you voluntarily consent to the clinical evaluation and treatment described.</p>
-                        <p><a href="{{ url('/pdfs/Patient Consent.pdf') }}" target="_blank" rel="noopener"> View full Patient Consent for Clinical Intake and Treatment</a></p>
+                        <p>You are completing a clinical intake questionnaire so a Michigan-licensed physician can determine whether you are medically appropriate to use a specific over-the-counter topical anesthetic during your procedure. Approval is not guaranteed. The physician evaluates your eligibility for the medication only and does not perform your procedure.</p>
+                        <p>You confirm that all information you provide is true, accurate, and complete. The medication, if prescribed, must be used only as directed. Excessive use, combining anesthetic products, prolonged application, occlusion not authorized by the prescription, or use on broken or compromised skin not authorized by the prescription can cause serious harm, including symptoms such as numbness around the mouth, metallic taste, lightheadedness, irregular heartbeat, seizure, or loss of consciousness. Seek immediate medical attention if you experience any of these symptoms.</p>
+                        <p>For lip blush and permanent eyeliner procedures, the prescription is for off-label use of an FDA-regulated over-the-counter topical anesthetic, off-label specifically as to the anatomical site of application. Off-label use of FDA-regulated medications by a licensed physician is a recognized and lawful element of medical practice. Procedure-specific risks are described in detail in the full Patient Consent document, including elevated absorption through lip tissue, cold sore reactivation for lip procedures, and risk of product migration into the eye for eyeliner procedures.</p>
+                        <p>By proceeding, you voluntarily consent to the clinical evaluation and to the treatment described in the full Patient Consent document.</p>
+                        <p><a href="{{ url('/pdfs/Patient_Consent.pdf') }}" target="_blank" rel="noopener"> View full Patient Consent for Clinical Intake and Treatment</a></p>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <h3>Affiliate Relationships Disclosure</h3>
+                        <p>The physician's prescription email may include affiliate links to retailers (including the StudioMeds Amazon storefront) where you can purchase recommended products. If you purchase through an affiliate link, StudioMeds may receive a commission from the retailer. The commission does not affect the price you pay. The clinical recommendation is independent of any commission structure. Your prescription is complete and valid regardless of where you purchase the recommended product.</p>
                     </div>
                 </div>
                 <div class="row g-3">
                     <div class="col-md-12">
                         <h3>Acknowledgment</h3>
-                        <p>I acknowledge that I am purchasing a virtual medical evaluation, not a medication or product, and that a prescription may be issued only if clinically appropriate. I have read and agree to the Terms & Conditions, including the Refund Policy, the Privacy Policy, and the Patient Consent for Clinical Intake and Treatment. I understand that I will not be charged if I am not appropriate for a virtual medical assessment, and that once my clinical intake questionnaire is submitted and a prescription is issued, no refunds are provided. I consent to the collection, use, and secure handling of my information and to receiving service-related electronic communications, including prescription delivery.</p>
-                        <p><a href="{{ url('/pdfs/TERMS AND CONDITIONS.pdf') }}" target="_blank" rel="noopener"> Terms & Conditions</a></br>
-                            <a href="{{ url('/pdfs/PRIVACY POLICY.pdf') }}" target="_blank" rel="noopener"> Privacy Policy</a></br>
-                            <a href="{{ url('/pdfs/Patient Consent.pdf') }}" target="_blank" rel="noopener"> Patient Consent for Clinical Intake and Treatment</a>
+                        <p>I acknowledge that I am purchasing a virtual medical evaluation, not a medication or product, and that a prescription will be issued only if clinically appropriate. I have read and agree to the Terms and Conditions, the Privacy Policy, the Patient Consent for Clinical Intake and Treatment, and the Refund Policy. I understand that I will not be charged if I am not medically appropriate, and that once my prescription is issued and delivered, no refunds are provided except in the narrow circumstances described in the Refund Policy. I consent to the collection, use, and secure handling of my information and to receiving electronic communications including delivery of my prescription. I acknowledge the affiliate relationships disclosure.</p>
+                        <p><a href="{{ url('/pdfs/TERMS_AND_CONDITIONS.pdf') }}" target="_blank" rel="noopener"> Terms and Conditions</a></br>
+                            <a href="{{ url('/pdfs/PRIVACY_POLICY.pdf') }}" target="_blank" rel="noopener"> Privacy Policy</a></br>
+                            <a href="{{ url('/pdfs/Patient_Consent.pdf') }}" target="_blank" rel="noopener"> Patient Consent</a></br>
+                            <a href="{{ url('/pdfs/REFUND_POLICY.pdf') }}" target="_blank" rel="noopener"> Refund Policy</a>
                         </p>
-                        <label><input type="checkbox" name="terms_agree_check" id="terms_agree_check" value="1"> <strong>I Acknowledge and Agree — Terms, Privacy & Medical Consent</strong></label>
+                        <label><input type="checkbox" name="terms_agree_check" id="terms_agree_check" value="1"> <strong>I Acknowledge and Agree — Terms, Privacy, Refund Policy, and Medical Consent</strong></label>
                     </div>
                 </div>
             </div>
