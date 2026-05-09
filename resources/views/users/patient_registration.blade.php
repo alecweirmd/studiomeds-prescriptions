@@ -1057,8 +1057,35 @@
             $('#manual-fallback-section').show();
             $('#drivers_license_image').prop('required', true);
             $('#selfie_image').prop('required', true);
-            showPostVerification();
+            // Do NOT reveal post-verification yet — user must upload both files first.
+            // The change listener below handles that gate.
         }
+
+        // Manual-fallback gate: only reveal procedure + medical questions once
+        // BOTH driver's license and selfie images have been chosen. If either is
+        // cleared after the fact, hide post-verification again.
+        function manualFallbackUploadsComplete() {
+            var dl = document.getElementById('drivers_license_image');
+            var sf = document.getElementById('selfie_image');
+            return !!(dl && dl.files && dl.files.length > 0 &&
+                      sf && sf.files && sf.files.length > 0);
+        }
+
+        function syncManualFallbackGate() {
+            // Only relevant when the manual fallback section is the active path.
+            if (!$('#manual-fallback-section').is(':visible')) { return; }
+            if (manualFallbackUploadsComplete()) {
+                // Clear any prior "uploads required" error styling
+                $('#manual-upload-incomplete-error').remove();
+                $('#manual-fallback-section').css({ 'outline': '', 'border-radius': '', 'padding': '' });
+                showPostVerification();
+            } else {
+                $('#post-verification-section').hide();
+                $('#submit-footer').hide();
+                if (typeof setStep === 'function') { setStep(1); }
+            }
+        }
+        $(document).on('change', '#drivers_license_image, #selfie_image', syncManualFallbackGate);
 
         var diditPollInterval = null;
         var diditPollStart    = null;
@@ -1196,6 +1223,20 @@
                 e.preventDefault();
                 $('#date_of_birth').after('<div id="dob-age-error" class="alert alert-danger mt-2">You must be 18 or older to submit this form.</div>');
                 $('#date_of_birth')[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            // 1b. If user is on the manual ID-verification fallback path, both uploads
+            //     are required. The form has novalidate, so HTML5 `required` is a no-op —
+            //     this gate is the actual enforcement.
+            $('#manual-upload-incomplete-error').remove();
+            if ($('#manual-fallback-section').is(':visible') && !manualFallbackUploadsComplete()) {
+                e.preventDefault();
+                const $fbTarget = $('#manual-fallback-section');
+                $fbTarget.css({ 'outline': '2px solid #dc3545', 'border-radius': '4px', 'padding': '8px' });
+                $('<div id="manual-upload-incomplete-error" class="alert alert-danger mt-2">Please upload both your driver&rsquo;s license and a selfie before submitting.</div>')
+                    .insertBefore($fbTarget);
+                $fbTarget[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
             }
 
