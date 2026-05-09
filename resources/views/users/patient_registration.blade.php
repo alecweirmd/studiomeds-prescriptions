@@ -703,6 +703,24 @@
     </div>
 </div>
 
+<div class="modal fade" id="procedureSwitchConfirmModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Hold up. Switching procedures changes a few things.</h5>
+            </div>
+            <div class="modal-body">
+                <p>The questions we ask and the meds your doctor prescribes depend on what you&rsquo;re getting done. If you switch, we&rsquo;ll restart your intake to make sure everything matches your new procedure.</p>
+                <p class="text-muted small mb-0">Want to switch?</p>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-primary" id="procedureSwitchCancelBtn">No, go back</button>
+                <button type="button" class="btn btn-outline-secondary" id="procedureSwitchConfirmBtn">Yes, switch</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="paymentModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -993,6 +1011,62 @@
         $(document).on('change', 'input[name="procedure_type"]', syncProcedureAddOns);
         // Run once on load to handle old() repopulation after a server-side validation error
         syncProcedureAddOns();
+
+        // ── Procedure-switch confirmation modal ───────────────────────────────
+        // Initial selection: no modal (first click on any card).
+        // Same-card click: no-op.
+        // Different-card click while a procedure is already selected: SWITCH —
+        // block the radio change, prompt for confirmation, only commit on Yes.
+        var currentlySelectedProcedure = $('input[name="procedure_type"]:checked').val() || '';
+        var pendingProcedureSwitch = null;
+        var procedureSwitchModal = new bootstrap.Modal(
+            document.getElementById('procedureSwitchConfirmModal')
+        );
+
+        // Keep the tracker in sync with whatever the radios actually settle on.
+        // Fires on first selection (native click), on confirmed switches
+        // (programmatic .trigger('change') below), and any other path that
+        // legitimately changes procedure_type.
+        $(document).on('change', 'input[name="procedure_type"]', function() {
+            currentlySelectedProcedure = this.value;
+        });
+
+        // Intercept clicks BEFORE the radio toggles. Bound on the radios — this
+        // catches mouse-on-label (label fires a synthetic click on its radio)
+        // and keyboard space-on-focused-radio with a single handler.
+        $(document).on('click', '.procedure-radio', function(e) {
+            var clickedValue = this.value;
+            // First-time selection: no modal, allow native check.
+            if (!currentlySelectedProcedure) { return; }
+            // Same card already selected: native click on a checked radio is a
+            // no-op anyway, just bail.
+            if (clickedValue === currentlySelectedProcedure) { return; }
+            // Different card, with something already selected — confirm before
+            // committing the change. Block the radio toggle so the visual
+            // selected state stays on the originally-selected card.
+            e.preventDefault();
+            pendingProcedureSwitch = clickedValue;
+            procedureSwitchModal.show();
+        });
+
+        $('#procedureSwitchCancelBtn').on('click', function() {
+            // No change. Drop the pending value; the radios were never updated.
+            pendingProcedureSwitch = null;
+            procedureSwitchModal.hide();
+        });
+
+        $('#procedureSwitchConfirmBtn').on('click', function() {
+            if (pendingProcedureSwitch) {
+                // Programmatically check the target radio and fire a change
+                // event so syncProcedureAddOns runs and the tracker updates.
+                $('input[name="procedure_type"][value="' + pendingProcedureSwitch + '"]')
+                    .prop('checked', true)
+                    .trigger('change');
+                pendingProcedureSwitch = null;
+            }
+            procedureSwitchModal.hide();
+        });
+        // ── End procedure-switch confirmation modal ───────────────────────────
 
         // Prevent the year portion of the date input from exceeding 4 digits
         $('#date_of_birth').on('change', function() {
