@@ -744,4 +744,44 @@ class DashboardController extends Controller
             'message' => 'Test email sent to ' . $to . '.',
         ]);
     }
+
+    // ── Lip/Eyeliner Waitlist ───────────────────────────────────────────
+    public function waitlistDashboard()
+    {
+        if (session()->get('user_type') != 1) {
+            abort(403);
+        }
+
+        $entries = \App\Models\LipEyelinerWaitlistEntry::orderByDesc('created_at')->get();
+
+        return view('dashboards/waitlist', compact('entries'));
+    }
+
+    public function exportWaitlist()
+    {
+        if (session()->get('user_type') != 1) {
+            abort(403);
+        }
+
+        $entries = \App\Models\LipEyelinerWaitlistEntry::orderByDesc('created_at')->get();
+
+        $filename = 'lip_eyeliner_waitlist_' . now()->format('Ymd') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => 'attachment; filename=' . $filename,
+        ];
+
+        return response()->streamDownload(function () use ($entries) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['email', 'created_at']);
+            foreach ($entries as $e) {
+                fputcsv($out, [
+                    $e->email,
+                    $e->created_at ? $e->created_at->format('Y-m-d H:i:s') : '',
+                ]);
+            }
+            fclose($out);
+        }, $filename, $headers);
+    }
 }

@@ -10,5 +10,9 @@ class LipEyelinerWaitlistEntry extends Model
 
     protected $fillable = ['email'];
 
+    protected $casts = [
+        'created_at' => 'datetime',
+    ];
+
     public $timestamps = false;
 }
