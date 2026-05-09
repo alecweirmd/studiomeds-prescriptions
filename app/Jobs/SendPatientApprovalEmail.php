@@ -30,16 +30,20 @@ class SendPatientApprovalEmail implements ShouldQueue
     {
         $patient = Patients::findOrFail($this->patientId);
 
-        // Lip blush and eyeliner procedures do not yet have prescription PDFs attached.
-        // Awaiting clinical product specification — when provided, PDF generation will be
-        // added back into the facial branch below.
         $procedure = $patient->procedure_type;
 
         if ($procedure === 'lip_blush' || $procedure === 'eyeliner') {
-            Mail::send('emails/patient_approved_facial', ['patient' => $patient], function ($message) use ($patient) {
+            $file = storage_path("app/zensa_{$this->patientId}.pdf");
+
+            Pdf::loadView('pdf/zensa', ['patient' => $patient])->save($file);
+
+            Mail::send('emails/patient_approved_facial', ['patient' => $patient], function ($message) use ($patient, $file) {
                 $message->to($patient->email)
-                    ->subject('Your Medications Are Approved');
+                    ->subject('Your StudioMeds prescription is ready')
+                    ->attach($file, ['as' => 'Zensa Prescription.pdf']);
             });
+
+            @unlink($file);
             return;
         }
 

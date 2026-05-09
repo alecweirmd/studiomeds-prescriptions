@@ -599,6 +599,8 @@ class UsersController extends Controller
 
             \App\Jobs\SendAdminNotificationEmail::dispatch($emailmessage, $patient->id);
 
+            session()->flash('completed_procedure_type', $patient->procedure_type);
+
             return redirect('users/thank_you/');
     }
 
@@ -613,7 +615,8 @@ class UsersController extends Controller
 
     public function thank_you()
     {
-        return view('users/thank_you');
+        $procedureType = session('completed_procedure_type');
+        return view('users/thank_you', compact('procedureType'));
     }
 
     /**
