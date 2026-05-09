@@ -45,6 +45,56 @@
         0%, 100% { transform: translateY(0); }
         50%      { transform: translateY(4px); }
     }
+
+    /* Procedure picker — patient-facing card-style selector */
+    #procedure-section .procedure-heading {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    #procedure-section .procedure-radio {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+        width: 0; height: 0;
+    }
+    #procedure-section .procedure-card {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        height: 100%;
+        min-height: 110px;
+        padding: 1.5rem 1rem;
+        margin: 0;
+        background: #fff;
+        border: 2px solid #dee2e6;
+        border-radius: 0.5rem;
+        color: #212529;
+        font-size: 1.25rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
+        user-select: none;
+    }
+    #procedure-section .procedure-card:hover {
+        border-color: #1a9cd8;
+        background: #f3fbff;
+        box-shadow: 0 2px 6px rgba(26, 156, 216, 0.15);
+    }
+    #procedure-section .procedure-card:active {
+        transform: translateY(1px);
+    }
+    #procedure-section .procedure-radio:focus-visible + .procedure-card {
+        outline: 3px solid rgba(26, 156, 216, 0.45);
+        outline-offset: 2px;
+    }
+    #procedure-section .procedure-radio:checked + .procedure-card {
+        background: #1a9cd8;
+        border-color: #1789bf;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(26, 156, 216, 0.30);
+    }
 </style>
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -273,27 +323,27 @@
                 <div id="post-verification-section" style="display:none;">
 
                 {{-- PROCEDURE SELECTION --}}
-                <div class="row g-3 p-2" id="procedure-section">
-                    <h3>What procedure are you having?</h3>
-                    <div class="col-12">
-                        <div class="form-check">
-                            <input class="form-check-input procedure-radio" type="radio" name="procedure_type" id="procedure_tattoo" value="tattoo" {{ old('procedure_type') === 'tattoo' ? 'checked' : '' }} required>
-                            <label class="form-check-label" for="procedure_tattoo">Tattoo</label>
+                <div class="p-2" id="procedure-section">
+                    <h3 class="procedure-heading">What procedure are you having?</h3>
+                    <div class="row row-cols-2 row-cols-md-4 g-3">
+                        <div class="col">
+                            <input class="procedure-radio" type="radio" name="procedure_type" id="procedure_tattoo" value="tattoo" {{ old('procedure_type') === 'tattoo' ? 'checked' : '' }} required>
+                            <label class="procedure-card" for="procedure_tattoo">Tattoo</label>
                         </div>
-                        <div class="form-check">
-                            <input class="form-check-input procedure-radio" type="radio" name="procedure_type" id="procedure_brow_pmu" value="brow_pmu" {{ old('procedure_type') === 'brow_pmu' ? 'checked' : '' }} required>
-                            <label class="form-check-label" for="procedure_brow_pmu">Brow PMU</label>
+                        <div class="col">
+                            <input class="procedure-radio" type="radio" name="procedure_type" id="procedure_brow_pmu" value="brow_pmu" {{ old('procedure_type') === 'brow_pmu' ? 'checked' : '' }} required>
+                            <label class="procedure-card" for="procedure_brow_pmu">Brow PMU</label>
                         </div>
-                        <div class="form-check">
-                            <input class="form-check-input procedure-radio" type="radio" name="procedure_type" id="procedure_eyeliner" value="eyeliner" {{ old('procedure_type') === 'eyeliner' ? 'checked' : '' }} required>
-                            <label class="form-check-label" for="procedure_eyeliner">Eyeliner</label>
+                        <div class="col">
+                            <input class="procedure-radio" type="radio" name="procedure_type" id="procedure_eyeliner" value="eyeliner" {{ old('procedure_type') === 'eyeliner' ? 'checked' : '' }} required>
+                            <label class="procedure-card" for="procedure_eyeliner">Eyeliner</label>
                         </div>
-                        <div class="form-check">
-                            <input class="form-check-input procedure-radio" type="radio" name="procedure_type" id="procedure_lip_blush" value="lip_blush" {{ old('procedure_type') === 'lip_blush' ? 'checked' : '' }} required>
-                            <label class="form-check-label" for="procedure_lip_blush">Lip Blush</label>
+                        <div class="col">
+                            <input class="procedure-radio" type="radio" name="procedure_type" id="procedure_lip_blush" value="lip_blush" {{ old('procedure_type') === 'lip_blush' ? 'checked' : '' }} required>
+                            <label class="procedure-card" for="procedure_lip_blush">Lip Blush</label>
                         </div>
-                        @error('procedure_type') <div class="text-danger small">{{ $message }}</div> @enderror
                     </div>
+                    @error('procedure_type') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
                 </div>
 
                 <div id="medical-questions-wrapper" style="display:none;">
