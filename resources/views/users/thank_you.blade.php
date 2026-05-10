@@ -27,10 +27,10 @@
                 @endphp
                 @if ($isFacial)
                 <ol class="mb-0">
-                    <li>Check your email including spam/junk folder</li>
-                    <li>Your prescription will be for Zensa 5% cream</li>
-                    <li>We recommend purchase from Amazon as this may not be available in every local drug store</li>
-                    <li>Bring a printed or digital copy of your prescription and the medication to your appointment</li>
+                    <li>Check your email, including your spam or junk folder.</li>
+                    <li>Your prescription will be for Zensa 5% Lidocaine Cream.</li>
+                    <li>You will need to order Zensa online, as it may not be stocked at standard retail pharmacies. Online retailers such as Amazon typically deliver within a few days. Your prescription is complete and valid regardless of where you purchase the product.</li>
+                    <li>Bring a printed or digital copy of your prescription and the medication to your appointment.</li>
                 </ol>
                 @else
                 <ol class="mb-0">
