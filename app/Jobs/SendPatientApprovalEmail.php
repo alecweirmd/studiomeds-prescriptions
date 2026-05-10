@@ -30,6 +30,24 @@ class SendPatientApprovalEmail implements ShouldQueue
     {
         $patient = Patients::findOrFail($this->patientId);
 
+        $procedure = $patient->procedure_type;
+
+        if ($procedure === 'lip_blush' || $procedure === 'eyeliner') {
+            $file = storage_path("app/zensa_{$this->patientId}.pdf");
+
+            Pdf::loadView('pdf/zensa', ['patient' => $patient])->save($file);
+
+            Mail::send('emails/patient_approved_facial', ['patient' => $patient], function ($message) use ($patient, $file) {
+                $message->to($patient->email)
+                    ->subject('Your StudioMeds prescription is ready')
+                    ->attach($file, ['as' => 'Zensa Prescription.pdf']);
+            });
+
+            @unlink($file);
+            return;
+        }
+
+        // Default branch: tattoo, brow_pmu, or unset procedure_type (legacy patients)
         $file1 = storage_path("app/bactine_{$this->patientId}.pdf");
         $file2 = storage_path("app/lidocaine_{$this->patientId}.pdf");
 

@@ -6,5 +6,5 @@
 <p>Thank you,</br>
 StudioMeds, PLLC</br>
 <a href="mailto:admin@studiomeds.com">admin@studiomeds.com</a></br>
-<a href="www.studiomeds.com">www.studiomeds.com</a></br>
+<a href="https://www.studiomeds.com">www.studiomeds.com</a></br>
 </p>

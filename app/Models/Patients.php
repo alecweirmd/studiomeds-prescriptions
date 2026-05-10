@@ -23,6 +23,7 @@ class Patients extends Model {
         'drivers_license',
         'patient_photo',
         'user_type',
+        'procedure_type',
         'created_at',
         'updated_at',
     ];

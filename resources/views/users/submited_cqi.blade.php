@@ -22,6 +22,21 @@
                 <strong>Important:</strong> Patient answered "Yes" to one or more questions — please follow up with an in-person medical provider for further evaluation.
             </div>
 
+            @php
+                $procedureLabels = [
+                    'tattoo'    => 'Tattoo',
+                    'brow_pmu'  => 'Brow PMU',
+                    'eyeliner'  => 'Eyeliner',
+                    'lip_blush' => 'Lip Blush',
+                ];
+                $procedureLabel = $procedureLabels[$patient->procedure_type] ?? ($patient->procedure_type ?: 'Not specified');
+            @endphp
+
+            <!-- Procedure Type -->
+            <div class="alert alert-info p-3 mb-3">
+                <h4 class="mb-0"><strong>Procedure:</strong> {{ $procedureLabel }}</h4>
+            </div>
+
             <!-- Artist Information Section -->
             <div class="row g-3 p-2">
                 <h3>Artist Information</h3>
@@ -181,6 +196,47 @@
                 <p><strong>12. Have you ever been told you have a condition called methemoglobinemia or a blood disorder affecting oxygen carrying capacity?</strong>
                 {{ $patient->methemoglobinemia == 1 ? 'Yes' : 'No' }}</p>
             </div>
+
+            @php
+                $cqi = $patient->patientsCQI;
+                $hasLipAddOn = $cqi && $cqi->lip_cold_sore_active !== null;
+                $hasEyelinerAddOn = $cqi && (
+                    $cqi->eye_infection_active   !== null ||
+                    $cqi->recent_eye_surgery     !== null ||
+                    $cqi->contacts_cannot_remove !== null ||
+                    $cqi->severe_dry_eye         !== null
+                );
+            @endphp
+
+            @if($hasLipAddOn || $hasEyelinerAddOn)
+                <h5>Section 6: Procedure-Specific Questions</h5>
+
+                @if($hasLipAddOn)
+                <div class="mb-3">
+                    <p><strong>13. Do you currently have an active cold sore, fever blister, or herpes simplex outbreak on or near your lips?</strong>
+                    {{ $cqi->lip_cold_sore_active == 1 ? 'Yes' : 'No' }}</p>
+                </div>
+                @endif
+
+                @if($hasEyelinerAddOn)
+                <div class="mb-3">
+                    <p><strong>13. Do you currently have an active eye infection, blepharitis, conjunctivitis (pink eye), or stye?</strong>
+                    {{ $cqi->eye_infection_active == 1 ? 'Yes' : 'No' }}</p>
+                </div>
+                <div class="mb-3">
+                    <p><strong>14. Have you had eye surgery (LASIK, PRK, cataract, or other) within the past 6 months?</strong>
+                    {{ $cqi->recent_eye_surgery == 1 ? 'Yes' : 'No' }}</p>
+                </div>
+                <div class="mb-3">
+                    <p><strong>15. Do you currently wear contact lenses and are unable to remove them and switch to glasses for the day of your procedure and 24 hours afterward?</strong>
+                    {{ $cqi->contacts_cannot_remove == 1 ? 'Yes' : 'No' }}</p>
+                </div>
+                <div class="mb-3">
+                    <p><strong>16. Do you have severe dry eye syndrome that requires daily prescription eye drops or punctal plugs?</strong>
+                    {{ $cqi->severe_dry_eye == 1 ? 'Yes' : 'No' }}</p>
+                </div>
+                @endif
+            @endif
 
             @if($patient->patientsCQI && $patient->patientsCQI->status == 0)
             <div class="mt-4">

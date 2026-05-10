@@ -14,6 +14,9 @@
                     <a href="{{ url('/dashboard/marketing') }}" class="btn btn-secondary btn-sm">
                         &#x1F4E2; Marketing
                     </a>
+                    <a href="{{ url('/dashboard/waitlist') }}" class="btn btn-secondary btn-sm">
+                        &#x1F4DD; Lip/Eyeliner Waitlist
+                    </a>
                 </div>
             </div>
 

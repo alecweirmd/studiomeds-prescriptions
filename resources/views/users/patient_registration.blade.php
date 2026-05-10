@@ -45,6 +45,56 @@
         0%, 100% { transform: translateY(0); }
         50%      { transform: translateY(4px); }
     }
+
+    /* Procedure picker — patient-facing card-style selector */
+    #procedure-section .procedure-heading {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    #procedure-section .procedure-radio {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+        width: 0; height: 0;
+    }
+    #procedure-section .procedure-card {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        height: 100%;
+        min-height: 110px;
+        padding: 1.5rem 1rem;
+        margin: 0;
+        background: #fff;
+        border: 2px solid #dee2e6;
+        border-radius: 0.5rem;
+        color: #212529;
+        font-size: 1.25rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
+        user-select: none;
+    }
+    #procedure-section .procedure-card:hover {
+        border-color: #1a9cd8;
+        background: #f3fbff;
+        box-shadow: 0 2px 6px rgba(26, 156, 216, 0.15);
+    }
+    #procedure-section .procedure-card:active {
+        transform: translateY(1px);
+    }
+    #procedure-section .procedure-radio:focus-visible + .procedure-card {
+        outline: 3px solid rgba(26, 156, 216, 0.45);
+        outline-offset: 2px;
+    }
+    #procedure-section .procedure-radio:checked + .procedure-card {
+        background: #1a9cd8;
+        border-color: #1789bf;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(26, 156, 216, 0.30);
+    }
 </style>
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -272,6 +322,31 @@
                 {{-- Everything below verification is hidden until verification is complete --}}
                 <div id="post-verification-section" style="display:none;">
 
+                {{-- PROCEDURE SELECTION --}}
+                <div class="p-2" id="procedure-section">
+                    <h3 class="procedure-heading">What procedure are you having?</h3>
+                    <div class="row row-cols-2 row-cols-md-4 g-3">
+                        <div class="col">
+                            <input class="procedure-radio" type="radio" name="procedure_type" id="procedure_tattoo" value="tattoo" {{ old('procedure_type') === 'tattoo' ? 'checked' : '' }} required>
+                            <label class="procedure-card" for="procedure_tattoo">Tattoo</label>
+                        </div>
+                        <div class="col">
+                            <input class="procedure-radio" type="radio" name="procedure_type" id="procedure_brow_pmu" value="brow_pmu" {{ old('procedure_type') === 'brow_pmu' ? 'checked' : '' }} required>
+                            <label class="procedure-card" for="procedure_brow_pmu">Brow PMU</label>
+                        </div>
+                        <div class="col">
+                            <input class="procedure-radio" type="radio" name="procedure_type" id="procedure_eyeliner" value="eyeliner" {{ old('procedure_type') === 'eyeliner' ? 'checked' : '' }} required>
+                            <label class="procedure-card" for="procedure_eyeliner">Eyeliner</label>
+                        </div>
+                        <div class="col">
+                            <input class="procedure-radio" type="radio" name="procedure_type" id="procedure_lip_blush" value="lip_blush" {{ old('procedure_type') === 'lip_blush' ? 'checked' : '' }} required>
+                            <label class="procedure-card" for="procedure_lip_blush">Lip Blush</label>
+                        </div>
+                    </div>
+                    @error('procedure_type') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
+                </div>
+
+                <div id="medical-questions-wrapper" style="display:none;">
                 <h3>Medical Screening Questions</h3>
 
                 <div class="py-2">
@@ -443,7 +518,83 @@
                             </div>
                         </div>
                     </div>
+
+                    {{-- PROCEDURE-SPECIFIC ADD-ON QUESTIONS (shown only for matching procedure_type) --}}
+                    <div class="procedure-addon" id="lip-blush-addons" data-procedure="lip_blush" style="display:none;">
+                        <div class="mb-3">
+                            <label class="form-label">13. Do you currently have an active cold sore, fever blister, or herpes simplex outbreak on or near your lips?</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="lip_cold_sore_active" id="lip_cold_sore_active_yes" value="1" {{ old('lip_cold_sore_active') === '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="lip_cold_sore_active_yes">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="lip_cold_sore_active" id="lip_cold_sore_active_no" value="0" {{ old('lip_cold_sore_active') === '0' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="lip_cold_sore_active_no">No</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="procedure-addon" id="eyeliner-addons" data-procedure="eyeliner" style="display:none;">
+                        <div class="mb-3">
+                            <label class="form-label">13. Do you currently have an active eye infection, blepharitis, conjunctivitis (pink eye), or stye?</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="eye_infection_active" id="eye_infection_active_yes" value="1" {{ old('eye_infection_active') === '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="eye_infection_active_yes">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="eye_infection_active" id="eye_infection_active_no" value="0" {{ old('eye_infection_active') === '0' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="eye_infection_active_no">No</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">14. Have you had eye surgery (LASIK, PRK, cataract, or other) within the past 6 months?</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="recent_eye_surgery" id="recent_eye_surgery_yes" value="1" {{ old('recent_eye_surgery') === '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="recent_eye_surgery_yes">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="recent_eye_surgery" id="recent_eye_surgery_no" value="0" {{ old('recent_eye_surgery') === '0' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="recent_eye_surgery_no">No</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">15. Do you currently wear contact lenses and are unable to remove them and switch to glasses for the day of your procedure and 24 hours afterward?</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="contacts_cannot_remove" id="contacts_cannot_remove_yes" value="1" {{ old('contacts_cannot_remove') === '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="contacts_cannot_remove_yes">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="contacts_cannot_remove" id="contacts_cannot_remove_no" value="0" {{ old('contacts_cannot_remove') === '0' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="contacts_cannot_remove_no">No</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">16. Do you have severe dry eye syndrome that requires daily prescription eye drops or punctal plugs?</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="severe_dry_eye" id="severe_dry_eye_yes" value="1" {{ old('severe_dry_eye') === '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="severe_dry_eye_yes">Yes</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input q-radio" type="radio" name="severe_dry_eye" id="severe_dry_eye_no" value="0" {{ old('severe_dry_eye') === '0' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="severe_dry_eye_no">No</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+                </div>{{-- end medical-questions-wrapper --}}
 
                 </div>{{-- end post-verification-section --}}
             </div>
@@ -463,68 +614,65 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Terms & Conditions</h3>
+                <h3 class="modal-title">Terms, Privacy & Medical Consent</h3>
             </div>
             <div class="modal-body" style="max-height:500px; overflow-y:scroll; ">
                 <div class="row g-3">
                     <div class="col-md-12">
                         <h3>Service Summary</h3>
                         <p><strong>Virtual Medical Evaluation</strong></p>
-                        <p>You are purchasing a professional virtual medical evaluation performed by a licensed physician. If clinically appropriate, a prescription may be issued. StudioMeds, PLLC does not sell, dispense, or ship medication.</p>
+                        <p>You are purchasing a professional virtual medical evaluation performed by a Michigan-licensed physician. If clinically appropriate, the physician will issue a prescription authorizing your use of a specific over-the-counter topical anesthetic during your procedure. StudioMeds, PLLC does not sell, dispense, or ship medication.</p>
+                        <p><strong>Price and Billing</strong></p>
+                        <p>Price: $35.00 per evaluation (one-time fee). No subscriptions. No recurring charges. Cash-pay only.</p>
+                        <p>You will not be charged if the physician determines you are not medically appropriate to receive the prescription.</p>
                     </div>
                 </div>
                 <div class="row g-3">
                     <div class="col-md-12">
-                        <h3>Price & Billing Disclosure</h3>
-                        <p><strong>Price: $35.00 (one-time fee)</strong></p>
-                        <p>No subscriptions. No recurring charges.</p>
+                        <h3>Terms and Conditions</h3>
+                        <p>You are purchasing a virtual medical evaluation, not a medication or product. If clinically appropriate, the physician may issue a prescription. Approval is not guaranteed. StudioMeds does not sell or dispense medication and is not a pharmacy. Procedures themselves are performed by separately licensed body art professionals; StudioMeds does not perform procedures.</p>
+                        <p>You will not be charged if you are not medically appropriate. Once your evaluation is completed and the prescription has been delivered to your email address, the service is considered fully rendered and no refund will be issued, except for narrow circumstances described in the Refund Policy (such as duplicate charges or technical delivery failures).</p>
+                        <p>By proceeding, you consent to electronic communications, including delivery of your prescription by email. Disputes are resolved by good-faith negotiation followed by binding arbitration under the American Arbitration Association's Consumer Arbitration Rules, except that you may bring an individual claim in small claims court if it is within that court's jurisdiction. Class actions are waived. Michigan law governs.</p>
+                        <p><a href="{{ url('/pdfs/TERMS_AND_CONDITIONS.pdf') }}" target="_blank" rel="noopener"> View full Terms and Conditions</a></p>
                     </div>
                 </div>
                 <div class="row g-3">
                     <div class="col-md-12">
-                        <h3>Refund Policy Summary</h3>
-                        <ul>
-                            <li>You will <strong>not be charged</strong> if you are deemed <strong>not appropriate for a virtual medical assessment for over the counter topical anesthetic prescription.</strong></li>
-                            <li>Once your evaluation is completed and a prescription is issued, <strong>no refunds are provided once the clinic intake questionnaire has been submitted.</strong></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <h3>Terms & Conditions</h3>
-                        <p><i>You are purchasing a <strong>virtual medical evaluation</strong>, not a medication or product. If clinically appropriate, a prescription may be issued at the physician’s discretion; approval is not guaranteed. StudioMeds does not sell or dispense medication and is not a pharmacy.</i></p>
-                        <p><i>You will <strong>not be charged</strong> if you are not appropriate for a virtual medical assessment. Once your evaluation is completed and a prescription is issued, the service is fully rendered and <strong>no refunds are provided</strong>.</i></p>
-                        <p><i>By proceeding, you consent to electronic communications and agree that disputes are resolved through binding arbitration under Michigan law.</i></p>
-                        <p><a href="{{ url('/pdfs/TERMS AND CONDITIONS.pdf') }}" target="_blank" rel="noopener"> View full Terms & Conditions</a></p>
-                    </div>
-                </div>
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <h3>Privacy Policy & Electronic Communication Consent</h3>
-                        <p>StudioMeds collects personal, health, and technical information you provide in order to conduct your virtual medical evaluation, determine eligibility for a prescription, and deliver service-related communications, including prescription delivery by email.</p>
-                        <p>Your information is <strong>not sold</strong> and is shared only with licensed physicians, required service providers, payment processors, and regulatory or legal authorities when necessary. StudioMeds uses reasonable safeguards to protect your information, though no system is completely secure.</p>
+                        <h3>Privacy Policy</h3>
+                        <p>StudioMeds is operated by a Michigan-licensed physician and is subject to Michigan physician confidentiality law and the Michigan Medical Records Access Act. We collect identification, health, and limited payment confirmation information necessary to conduct your evaluation, issue and deliver your prescription, and maintain the medical records that Michigan law requires us to keep.</p>
+                        <p>We do not sell your information. We share your information only with the prescribing physician, with a limited set of service providers required to operate the platform (each contractually bound to protect your information), with the body art facility as required by Michigan body art regulations (this happens at your direction when you provide the prescription to your artist), and with regulatory or legal authorities when required by law.</p>
+                        <p>You have the right to access your records, request correction of inaccurate information, request a copy in portable format, and request reasonable restrictions on disclosure. To exercise these rights, contact admin@studiomeds.com.</p>
+                        <p>In the event your information is acquired by an unauthorized party, we will notify you consistent with Michigan's Identity Theft Protection Act.</p>
                         <p>By proceeding, you consent to the collection, use, and secure handling of your information as described in the Privacy Policy.</p>
-                        <p><a href="{{ url('/pdfs/PRIVACY POLICY.pdf') }}" target="_blank" rel="noopener"> View full Privacy Policy</a></p>
+                        <p><a href="{{ url('/pdfs/PRIVACY_POLICY.pdf') }}" target="_blank" rel="noopener"> View full Privacy Policy</a></p>
                     </div>
                 </div>
                 <div class="row g-3">
                     <div class="col-md-12">
                         <h3>Patient Consent for Clinical Intake and Treatment</h3>
-                        <p>You are completing a clinical intake questionnaire to allow a licensed provider to determine whether it is medically appropriate to prescribe an over-the-counter topical anesthetic. Approval is not guaranteed, and the provider is evaluating eligibility for the medication only and is not performing your procedure.</p>
-                        <p>You understand that these medications must be used only as prescribed and that improper use—including excessive dosing, combining products, prolonged application, or use on compromised skin—may result in serious injury or death. You agree to follow all instructions and accept responsibility for ensuring proper use.</p>
-                        <p>You acknowledge that use of these medications for body art or cosmetic procedures is off-label and not FDA-approved for this purpose, and that such use carries known and potential risks. By proceeding, you voluntarily consent to the clinical evaluation and treatment described.</p>
-                        <p><a href="{{ url('/pdfs/Patient Consent.pdf') }}" target="_blank" rel="noopener"> View full Patient Consent for Clinical Intake and Treatment</a></p>
+                        <p>You are completing a clinical intake questionnaire so a Michigan-licensed physician can determine whether you are medically appropriate to use a specific over-the-counter topical anesthetic during your procedure. Approval is not guaranteed. The physician evaluates your eligibility for the medication only and does not perform your procedure.</p>
+                        <p>You confirm that all information you provide is true, accurate, and complete. The medication, if prescribed, must be used only as directed. Excessive use, combining anesthetic products, prolonged application, occlusion not authorized by the prescription, or use on broken or compromised skin not authorized by the prescription can cause serious harm, including symptoms such as numbness around the mouth, metallic taste, lightheadedness, irregular heartbeat, seizure, or loss of consciousness. Seek immediate medical attention if you experience any of these symptoms.</p>
+                        <p>For lip blush and permanent eyeliner procedures, the prescription is for off-label use of an FDA-regulated over-the-counter topical anesthetic, off-label specifically as to the anatomical site of application. Off-label use of FDA-regulated medications by a licensed physician is a recognized and lawful element of medical practice. Procedure-specific risks are described in detail in the full Patient Consent document, including elevated absorption through lip tissue, cold sore reactivation for lip procedures, and risk of product migration into the eye for eyeliner procedures.</p>
+                        <p>By proceeding, you voluntarily consent to the clinical evaluation and to the treatment described in the full Patient Consent document.</p>
+                        <p><a href="{{ url('/pdfs/Patient_Consent.pdf') }}" target="_blank" rel="noopener"> View full Patient Consent for Clinical Intake and Treatment</a></p>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <h3>Affiliate Relationships Disclosure</h3>
+                        <p>The physician's prescription email may include affiliate links to retailers (including the StudioMeds Amazon storefront) where you can purchase recommended products. If you purchase through an affiliate link, StudioMeds may receive a commission from the retailer. The commission does not affect the price you pay. The clinical recommendation is independent of any commission structure. Your prescription is complete and valid regardless of where you purchase the recommended product.</p>
                     </div>
                 </div>
                 <div class="row g-3">
                     <div class="col-md-12">
                         <h3>Acknowledgment</h3>
-                        <p>I acknowledge that I am purchasing a virtual medical evaluation, not a medication or product, and that a prescription may be issued only if clinically appropriate. I have read and agree to the Terms & Conditions, including the Refund Policy, the Privacy Policy, and the Patient Consent for Clinical Intake and Treatment. I understand that I will not be charged if I am not appropriate for a virtual medical assessment, and that once my clinical intake questionnaire is submitted and a prescription is issued, no refunds are provided. I consent to the collection, use, and secure handling of my information and to receiving service-related electronic communications, including prescription delivery.</p>
-                        <p><a href="{{ url('/pdfs/TERMS AND CONDITIONS.pdf') }}" target="_blank" rel="noopener"> Terms & Conditions</a></br>
-                            <a href="{{ url('/pdfs/PRIVACY POLICY.pdf') }}" target="_blank" rel="noopener"> Privacy Policy</a></br>
-                            <a href="{{ url('/pdfs/Patient Consent.pdf') }}" target="_blank" rel="noopener"> Patient Consent for Clinical Intake and Treatment</a>
+                        <p>I acknowledge that I am purchasing a virtual medical evaluation, not a medication or product, and that a prescription will be issued only if clinically appropriate. I have read and agree to the Terms and Conditions, the Privacy Policy, the Patient Consent for Clinical Intake and Treatment, and the Refund Policy. I understand that I will not be charged if I am not medically appropriate, and that once my prescription is issued and delivered, no refunds are provided except in the narrow circumstances described in the Refund Policy. I consent to the collection, use, and secure handling of my information and to receiving electronic communications including delivery of my prescription. I acknowledge the affiliate relationships disclosure.</p>
+                        <p><a href="{{ url('/pdfs/TERMS_AND_CONDITIONS.pdf') }}" target="_blank" rel="noopener"> Terms and Conditions</a></br>
+                            <a href="{{ url('/pdfs/PRIVACY_POLICY.pdf') }}" target="_blank" rel="noopener"> Privacy Policy</a></br>
+                            <a href="{{ url('/pdfs/Patient_Consent.pdf') }}" target="_blank" rel="noopener"> Patient Consent</a></br>
+                            <a href="{{ url('/pdfs/REFUND_POLICY.pdf') }}" target="_blank" rel="noopener"> Refund Policy</a>
                         </p>
-                        <label><input type="checkbox" name="terms_agree_check" id="terms_agree_check" value="1"> <strong>I Acknowledge and Agree — Terms, Privacy & Medical Consent</strong></label>
+                        <label><input type="checkbox" name="terms_agree_check" id="terms_agree_check" value="1"> <strong>I Acknowledge and Agree — Terms, Privacy, Refund Policy, and Medical Consent</strong></label>
                     </div>
                 </div>
             </div>
@@ -550,6 +698,24 @@
             </div>
             <div class="modal-footer justify-content-center">
                 <button type="button" class="btn btn-danger px-5" id="medicalWarningAcknowledge">I Understand</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="procedureSwitchConfirmModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Hold up. Switching procedures changes a few things.</h5>
+            </div>
+            <div class="modal-body">
+                <p>The questions we ask and the meds your doctor prescribes depend on what you&rsquo;re getting done. If you switch, we&rsquo;ll restart your intake to make sure everything matches your new procedure.</p>
+                <p class="text-muted small mb-0">Want to switch?</p>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-primary" id="procedureSwitchCancelBtn">No, go back</button>
+                <button type="button" class="btn btn-outline-secondary" id="procedureSwitchConfirmBtn">Yes, switch</button>
             </div>
         </div>
     </div>
@@ -791,19 +957,116 @@
         });
 
 
-        const medicalFields = ['lidocaine','bactine','broken_skin','eczema','heart_rhythm','liver_disease','seizures','pregnant','antiarrhythmic','seizure_meds','fainted','methemoglobinemia'];
+        const baseMedicalFields = ['lidocaine','bactine','broken_skin','eczema','heart_rhythm','liver_disease','seizures','pregnant','antiarrhythmic','seizure_meds','fainted','methemoglobinemia'];
+        const procedureAddOnFields = {
+            lip_blush: ['lip_cold_sore_active'],
+            eyeliner:  ['eye_infection_active','recent_eye_surgery','contacts_cannot_remove','severe_dry_eye'],
+            tattoo:    [],
+            brow_pmu:  [],
+        };
+
+        function selectedProcedure() {
+            return $('input[name="procedure_type"]:checked').val() || '';
+        }
+
+        function currentMedicalFields() {
+            var addOns = procedureAddOnFields[selectedProcedure()] || [];
+            return baseMedicalFields.concat(addOns);
+        }
 
         function anyYesSelected() {
-            return medicalFields.some(function(name) {
+            return currentMedicalFields().some(function(name) {
                 return $('input[name="' + name + '"]:checked').val() === '1';
             });
         }
 
         function allQuestionsAnswered() {
-            return medicalFields.every(function(name) {
+            return currentMedicalFields().every(function(name) {
                 return $('input[name="' + name + '"]:checked').length > 0;
             });
         }
+
+        // Show/hide procedure-specific add-on questions and clear stale values on hidden ones.
+        // Also gate the entire medical-questions block on procedure selection so users can't
+        // answer CQI questions before they've identified their procedure.
+        function syncProcedureAddOns() {
+            var procedure = selectedProcedure();
+            if (procedure) {
+                $('#medical-questions-wrapper').show();
+            } else {
+                $('#medical-questions-wrapper').hide();
+            }
+            $('.procedure-addon').each(function() {
+                var $block = $(this);
+                if ($block.data('procedure') === procedure) {
+                    $block.show();
+                } else {
+                    $block.hide();
+                    $block.find('input[type="radio"]').prop('checked', false);
+                    // clear any red-outline error styling from previously-required fields
+                    $block.find('.mb-3, .py-2').css({ 'outline': '', 'border-radius': '', 'padding': '' });
+                }
+            });
+        }
+        $(document).on('change', 'input[name="procedure_type"]', syncProcedureAddOns);
+        // Run once on load to handle old() repopulation after a server-side validation error
+        syncProcedureAddOns();
+
+        // ── Procedure-switch confirmation modal ───────────────────────────────
+        // Initial selection: no modal (first click on any card).
+        // Same-card click: no-op.
+        // Different-card click while a procedure is already selected: SWITCH —
+        // block the radio change, prompt for confirmation, only commit on Yes.
+        var currentlySelectedProcedure = $('input[name="procedure_type"]:checked').val() || '';
+        var pendingProcedureSwitch = null;
+        var procedureSwitchModal = new bootstrap.Modal(
+            document.getElementById('procedureSwitchConfirmModal')
+        );
+
+        // Keep the tracker in sync with whatever the radios actually settle on.
+        // Fires on first selection (native click), on confirmed switches
+        // (programmatic .trigger('change') below), and any other path that
+        // legitimately changes procedure_type.
+        $(document).on('change', 'input[name="procedure_type"]', function() {
+            currentlySelectedProcedure = this.value;
+        });
+
+        // Intercept clicks BEFORE the radio toggles. Bound on the radios — this
+        // catches mouse-on-label (label fires a synthetic click on its radio)
+        // and keyboard space-on-focused-radio with a single handler.
+        $(document).on('click', '.procedure-radio', function(e) {
+            var clickedValue = this.value;
+            // First-time selection: no modal, allow native check.
+            if (!currentlySelectedProcedure) { return; }
+            // Same card already selected: native click on a checked radio is a
+            // no-op anyway, just bail.
+            if (clickedValue === currentlySelectedProcedure) { return; }
+            // Different card, with something already selected — confirm before
+            // committing the change. Block the radio toggle so the visual
+            // selected state stays on the originally-selected card.
+            e.preventDefault();
+            pendingProcedureSwitch = clickedValue;
+            procedureSwitchModal.show();
+        });
+
+        $('#procedureSwitchCancelBtn').on('click', function() {
+            // No change. Drop the pending value; the radios were never updated.
+            pendingProcedureSwitch = null;
+            procedureSwitchModal.hide();
+        });
+
+        $('#procedureSwitchConfirmBtn').on('click', function() {
+            if (pendingProcedureSwitch) {
+                // Programmatically check the target radio and fire a change
+                // event so syncProcedureAddOns runs and the tracker updates.
+                $('input[name="procedure_type"][value="' + pendingProcedureSwitch + '"]')
+                    .prop('checked', true)
+                    .trigger('change');
+                pendingProcedureSwitch = null;
+            }
+            procedureSwitchModal.hide();
+        });
+        // ── End procedure-switch confirmation modal ───────────────────────────
 
         // Prevent the year portion of the date input from exceeding 4 digits
         $('#date_of_birth').on('change', function() {
@@ -868,8 +1131,35 @@
             $('#manual-fallback-section').show();
             $('#drivers_license_image').prop('required', true);
             $('#selfie_image').prop('required', true);
-            showPostVerification();
+            // Do NOT reveal post-verification yet — user must upload both files first.
+            // The change listener below handles that gate.
         }
+
+        // Manual-fallback gate: only reveal procedure + medical questions once
+        // BOTH driver's license and selfie images have been chosen. If either is
+        // cleared after the fact, hide post-verification again.
+        function manualFallbackUploadsComplete() {
+            var dl = document.getElementById('drivers_license_image');
+            var sf = document.getElementById('selfie_image');
+            return !!(dl && dl.files && dl.files.length > 0 &&
+                      sf && sf.files && sf.files.length > 0);
+        }
+
+        function syncManualFallbackGate() {
+            // Only relevant when the manual fallback section is the active path.
+            if (!$('#manual-fallback-section').is(':visible')) { return; }
+            if (manualFallbackUploadsComplete()) {
+                // Clear any prior "uploads required" error styling
+                $('#manual-upload-incomplete-error').remove();
+                $('#manual-fallback-section').css({ 'outline': '', 'border-radius': '', 'padding': '' });
+                showPostVerification();
+            } else {
+                $('#post-verification-section').hide();
+                $('#submit-footer').hide();
+                if (typeof setStep === 'function') { setStep(1); }
+            }
+        }
+        $(document).on('change', '#drivers_license_image, #selfie_image', syncManualFallbackGate);
 
         var diditPollInterval = null;
         var diditPollStart    = null;
@@ -1010,11 +1300,37 @@
                 return;
             }
 
-            // 2. All 12 medical questions must be answered
+            // 1b. If user is on the manual ID-verification fallback path, both uploads
+            //     are required. The form has novalidate, so HTML5 `required` is a no-op —
+            //     this gate is the actual enforcement.
+            $('#manual-upload-incomplete-error').remove();
+            if ($('#manual-fallback-section').is(':visible') && !manualFallbackUploadsComplete()) {
+                e.preventDefault();
+                const $fbTarget = $('#manual-fallback-section');
+                $fbTarget.css({ 'outline': '2px solid #dc3545', 'border-radius': '4px', 'padding': '8px' });
+                $('<div id="manual-upload-incomplete-error" class="alert alert-danger mt-2">Please upload both your driver&rsquo;s license and a selfie before submitting.</div>')
+                    .insertBefore($fbTarget);
+                $fbTarget[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            // 2a. Procedure type must be selected
+            $('#procedure-incomplete-error').remove();
+            if (!selectedProcedure()) {
+                e.preventDefault();
+                const $procTarget = $('#procedure-section');
+                $procTarget.css({ 'outline': '2px solid #dc3545', 'border-radius': '4px', 'padding': '8px' });
+                $('<div id="procedure-incomplete-error" class="alert alert-danger mt-2">Please select your procedure type before submitting.</div>')
+                    .insertBefore($procTarget);
+                $procTarget[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            // 2b. All medical questions for the selected procedure must be answered
             $('#medical-incomplete-error').remove();
             if (!allQuestionsAnswered()) {
                 e.preventDefault();
-                const firstUnanswered = medicalFields.find(function(name) {
+                const firstUnanswered = currentMedicalFields().find(function(name) {
                     return $('input[name="' + name + '"]:checked').length === 0;
                 });
                 const target = $('input[name="' + firstUnanswered + '"]').closest('.mb-3, .py-2');
@@ -1040,7 +1356,7 @@
         // "I Understand" closes warning modal and records the acknowledgement for audit
         $('#medicalWarningAcknowledge').on('click', function() {
             var triggeredQuestions = [];
-            ['lidocaine','bactine','broken_skin','eczema','heart_rhythm','liver_disease','seizures','pregnant','antiarrhythmic','seizure_meds','fainted','methemoglobinemia'].forEach(function(name) {
+            currentMedicalFields().forEach(function(name) {
                 if ($('input[name="' + name + '"]:checked').val() === '1') {
                     triggeredQuestions.push(name);
                 }

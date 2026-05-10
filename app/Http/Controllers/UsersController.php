@@ -232,6 +232,20 @@ class UsersController extends Controller
 
         $medicalFields = ['lidocaine','bactine','broken_skin','eczema','heart_rhythm','liver_disease','seizures','pregnant','antiarrhythmic','seizure_meds','fainted','methemoglobinemia'];
 
+        // Procedure-specific add-on questions: extend the medical-fields list so the
+        // existing validate() and any-yes-block loops cover them naturally.
+        $procedureType = $request->input('procedure_type');
+        if ($procedureType === 'lip_blush') {
+            $medicalFields[] = 'lip_cold_sore_active';
+        } elseif ($procedureType === 'eyeliner') {
+            $medicalFields = array_merge($medicalFields, [
+                'eye_infection_active',
+                'recent_eye_surgery',
+                'contacts_cannot_remove',
+                'severe_dry_eye',
+            ]);
+        }
+
         $medicalValidation = [];
         foreach ($medicalFields as $field) {
             $medicalValidation[$field] = 'required|in:0,1';
@@ -247,6 +261,7 @@ class UsersController extends Controller
             'date_of_birth'         => ['required', 'date_format:Y-m-d', 'before_or_equal:' . now()->subYears(18)->toDateString(), 'after:1000-01-01', 'regex:/^\d{4}-\d{2}-\d{2}$/'],
             'drivers_license_image' => $imageRule,
             'selfie_image'          => $imageRule,
+            'procedure_type'        => ['required', 'in:tattoo,brow_pmu,eyeliner,lip_blush'],
         ], $medicalValidation), [
             'email.email'                        => 'Please enter a valid email address.',
             'zip.regex'                          => 'Please enter a valid US ZIP code (e.g. 12345 or 12345-6789).',
@@ -358,6 +373,7 @@ class UsersController extends Controller
             $patient->city = $request->city;
             $patient->state = $request->state;
             $patient->zip = $request->zip;
+            $patient->procedure_type = $request->procedure_type;
 
             $driversLicensePath = null;
             $selfiePath = null;
@@ -422,6 +438,19 @@ class UsersController extends Controller
             $answers->seizure_meds = $request->seizure_meds;
             $answers->fainted = $request->fainted;
             $answers->methemoglobinemia = $request->methemoglobinemia;
+
+            // Procedure-specific add-on answers: only assign for the matching procedure
+            // so columns for other procedures remain null and don't pollute the record.
+            if ($request->procedure_type === 'lip_blush') {
+                $answers->lip_cold_sore_active = $request->lip_cold_sore_active;
+            }
+            if ($request->procedure_type === 'eyeliner') {
+                $answers->eye_infection_active   = $request->eye_infection_active;
+                $answers->recent_eye_surgery     = $request->recent_eye_surgery;
+                $answers->contacts_cannot_remove = $request->contacts_cannot_remove;
+                $answers->severe_dry_eye         = $request->severe_dry_eye;
+            }
+
             $answers->save();
 
             // If Didit webhook has not already set verification_method, the patient used manual upload
@@ -447,6 +476,19 @@ class UsersController extends Controller
                     'fainted'           => 'Q11: Fainted or severe reaction to local anesthetics',
                     'methemoglobinemia' => 'Q12: Methemoglobinemia or blood oxygen disorder',
                 ];
+
+                // Procedure-specific add-on labels: a given patient's PDF only ever shows
+                // the questions for their procedure, so reusing Q13 across lip blush /
+                // eyeliner is not a conflict.
+                if ($request->procedure_type === 'lip_blush') {
+                    $questionLabels['lip_cold_sore_active'] = 'Q13: Active cold sore, fever blister, or herpes simplex outbreak on or near lips';
+                }
+                if ($request->procedure_type === 'eyeliner') {
+                    $questionLabels['eye_infection_active']   = 'Q13: Active eye infection, blepharitis, conjunctivitis, or stye';
+                    $questionLabels['recent_eye_surgery']     = 'Q14: Eye surgery (LASIK, PRK, cataract, or other) within past 6 months';
+                    $questionLabels['contacts_cannot_remove'] = 'Q15: Wears contact lenses and cannot switch to glasses for procedure day + 24 hours';
+                    $questionLabels['severe_dry_eye']         = 'Q16: Severe dry eye syndrome requiring daily prescription drops or punctal plugs';
+                }
                 try {
                     $pdf = Pdf::loadView('pdf/flagged_submission', [
                         'patient'        => $patient,
@@ -557,6 +599,8 @@ class UsersController extends Controller
 
             \App\Jobs\SendAdminNotificationEmail::dispatch($emailmessage, $patient->id);
 
+            session()->flash('completed_procedure_type', $patient->procedure_type);
+
             return redirect('users/thank_you/');
     }
 
@@ -571,7 +615,8 @@ class UsersController extends Controller
 
     public function thank_you()
     {
-        return view('users/thank_you');
+        $procedureType = session('completed_procedure_type');
+        return view('users/thank_you', compact('procedureType'));
     }
 
     /**
@@ -596,7 +641,8 @@ class UsersController extends Controller
     {
 
         $patient = new Patients();
-        $patient->user_ip = $request->user_ip;
+        // Server-detected IP for audit trail integrity (changed from client-supplied $request->user_ip in session 3)
+        $patient->user_ip = $request->ip();
         $patient->terms_agree_check = $request->terms_agree_check;
         $patient->agree_time = date('Y-m-d H:i:s');
         $patient->email = '';
