@@ -110,6 +110,9 @@
         <input type="hidden" name="user_ip" id="user_ip" value="{{ old('user_ip') }}">
         <input type="hidden" name="utm_session_id" id="utm_session_id" value="">
         <input type="hidden" name="applied_code" id="applied_code" value="">
+        @if ($errors->has('applied_code'))
+        <input type="hidden" id="applied_code_error_flag" value="1">
+        @endif
         @csrf
         @method('post')
 
@@ -133,12 +136,19 @@
                     </div>
                 </div>
 
-                @if ($errors->any())
+                {{-- Top-of-form banner skips applied_code errors so they don't
+                     duplicate the inline render at #referral_code_error. --}}
+                @php
+                    $bannerErrorKeys = collect($errors->keys())->reject(fn($k) => $k === 'applied_code');
+                @endphp
+                @if ($bannerErrorKeys->isNotEmpty())
                 <div class="alert alert-danger">
                     <strong>Please fix the following:</strong>
                     <ul class="mb-0">
-                        @foreach ($errors->all() as $err)
-                        <li>{{ $err }}</li>
+                        @foreach ($bannerErrorKeys as $errKey)
+                            @foreach ($errors->get($errKey) as $err)
+                            <li>{{ $err }}</li>
+                            @endforeach
                         @endforeach
                     </ul>
                 </div>
@@ -777,6 +787,7 @@
                         <div class="border rounded p-3" style="background:#f8f9fa;">
                             <div class="d-flex gap-2">
                                 <input type="text" id="referral_code_input" class="form-control" placeholder="Enter code"
+                                       value="{{ old('applied_code') }}"
                                        autocomplete="off" autocapitalize="characters">
                                 <button type="button" class="btn btn-outline-primary" id="applyCodeBtn">Apply</button>
                             </div>
@@ -1382,6 +1393,31 @@
             if (this.value.length === 2) { $('#modal_cvc').focus(); }
         });
 
+        // ── Card-field format validation (matches server-side rules in
+        //    UsersController::store_patient — keep regexes in sync) ──────────
+        function validateCardFields() {
+            var invalid = [];
+            var num   = $('#modal_card_number').val().trim();
+            var month = $('#modal_exp_month').val().trim();
+            var year  = $('#modal_exp_year').val().trim();
+            var cvc   = $('#modal_cvc').val().trim();
+
+            if (!/^\d{13,19}$/.test(num)) { invalid.push('#modal_card_number'); }
+            var monthInt = parseInt(month, 10);
+            if (!/^\d{2}$/.test(month) || monthInt < 1 || monthInt > 12) { invalid.push('#modal_exp_month'); }
+            if (!/^\d{2}$/.test(year)) { invalid.push('#modal_exp_year'); }
+            if (!/^\d{3,4}$/.test(cvc)) { invalid.push('#modal_cvc'); }
+            return invalid;
+        }
+
+        // Clear red outline on edit; drop summary alert once all fields valid
+        $('#modal_card_number, #modal_exp_month, #modal_exp_year, #modal_cvc').on('input change', function() {
+            $(this).css({ 'outline': '', 'border-radius': '' });
+            if (validateCardFields().length === 0) {
+                $('#card-fields-incomplete-error').remove();
+            }
+        });
+
         // ── Referral code expand / collapse link ────────────────────────────
         var referralCollapseEl = document.getElementById('referralCodeCollapse');
         var referralCollapse   = referralCollapseEl ? new bootstrap.Collapse(referralCollapseEl, { toggle: false }) : null;
@@ -1399,6 +1435,55 @@
             });
         }
 
+        // ── Coupon-apply gate state ─────────────────────────────────────────
+        // lastAppliedValue tracks the most recent value the user submitted to
+        // Apply (success OR failure). The submit gate compares the current
+        // input against this so failed-Apply doesn't re-block a paying-full-
+        // price submit, while typed-but-never-Applied OR edited-after-Apply
+        // DOES block.
+        var lastAppliedValue = '';
+
+        // Restore the base $35.00 paid-flow UI; clears applied state too.
+        // Called when the user edits the coupon input — a previously-applied
+        // discount (especially a free-flow one that hid card fields) must be
+        // unwound so the form can't post in a ghost state.
+        function resetCouponPaymentUI() {
+            $('#applied_code').val('');
+            $('#referral_code_success').hide().text('');
+            $('#referral_code_error').hide().text('');
+            $('#referralCodeWrap').css({ 'outline': '', 'border-radius': '', 'padding': '' });
+            $('#applyCodeBtn').prop('disabled', false).text('Apply');
+            $('#modal_payment_amount').val('35.00');
+            $('#paymentAmountDisplay').text('$35.00');
+            $('#paymentAmountText').html('A one-time <strong id="paymentAmountDisplay">$35.00</strong> payment is required.');
+            $('#cardFieldsRow').show();
+            $('#cardLogosRow').show();
+            $('#confirmPaymentBtn').show();
+            $('#completeFreeBtn').hide();
+        }
+
+        // Edit clears applied state so a new value requires a fresh Apply.
+        $('#referral_code_input').on('input', function() {
+            resetCouponPaymentUI();
+        });
+
+        function couponApplyBlocked() {
+            var typed   = $('#referral_code_input').val().trim();
+            var applied = $('#applied_code').val();
+            return typed !== '' && typed !== lastAppliedValue && applied === '';
+        }
+
+        function fireCouponApplyGate() {
+            $('#referralCodeWrap').css({ 'outline': '2px solid #dc3545', 'border-radius': '4px', 'padding': '8px' });
+            $('#referral_code_error').text('Click Apply to use your code, or clear the field to continue without a discount.').show();
+            var collapseEl = document.getElementById('referralCodeCollapse');
+            if (collapseEl && !collapseEl.classList.contains('show') && referralCollapse) {
+                referralCollapse.show();
+            }
+            var ref = document.getElementById('referralCodeWrap');
+            if (ref) { ref.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        }
+
         // ── Referral code apply ─────────────────────────────────────────────
         $('#applyCodeBtn').on('click', function() {
             var code = $('#referral_code_input').val().trim();
@@ -1408,6 +1493,11 @@
                 $('#referral_code_error').text('Please enter a code.').show();
                 return;
             }
+            // Record the attempted value (success or failure) so the submit
+            // gate can distinguish "engaged with Apply" from "never applied".
+            lastAppliedValue = code;
+            // Clear any prior gate-fire outline now that the user is engaging.
+            $('#referralCodeWrap').css({ 'outline': '', 'border-radius': '', 'padding': '' });
             var $btn = $(this);
             $btn.prop('disabled', true).text('Checking...');
             $.ajax({
@@ -1419,7 +1509,6 @@
                 if (resp && resp.success) {
                     $('#applied_code').val(resp.code);
                     $('#referral_code_success').text(resp.message).show();
-                    $('#referral_code_input').prop('disabled', true);
                     $btn.text('Applied').prop('disabled', true);
                     if (resp.discount_type === 'free') {
                         $('#modal_payment_amount').val('0.00');
@@ -1439,7 +1528,9 @@
                         );
                     }
                 } else {
-                    $('#referral_code_error').text((resp && resp.message) ? resp.message : 'That code is not valid.').show();
+                    // Unified failure copy — granular server detection stays in
+                    // ReferralCodeController::validateCode; only rendering is generic.
+                    $('#referral_code_error').text('Discount code not recognized. Please check spelling and try again.').show();
                     $btn.prop('disabled', false).text('Apply');
                 }
             }).fail(function() {
@@ -1450,6 +1541,10 @@
 
         // ── Complete free evaluation (no payment) ───────────────────────────
         $('#completeFreeBtn').on('click', function() {
+            if (couponApplyBlocked()) {
+                fireCouponApplyGate();
+                return;
+            }
             $('#completeFreeBtn').prop('disabled', true).text('Processing...');
             $('#paymentProcessing').show();
 
@@ -1489,6 +1584,24 @@
         });
 
         $('#confirmPaymentBtn').on('click', function() {
+            // Card-field format gate — block before disabling button or appending hidden inputs.
+            $('#card-fields-incomplete-error').remove();
+            var invalidCardFields = validateCardFields();
+            if (invalidCardFields.length > 0) {
+                invalidCardFields.forEach(function(sel) {
+                    $(sel).css({ 'outline': '2px solid #dc3545', 'border-radius': '4px' });
+                });
+                $('<div id="card-fields-incomplete-error" class="alert alert-danger mt-2">Please complete all card fields with valid values before submitting.</div>')
+                    .insertBefore('#cardFieldsRow');
+                return;
+            }
+
+            // Coupon apply gate — typed-but-never-Applied or edited-after-Apply blocks here.
+            if (couponApplyBlocked()) {
+                fireCouponApplyGate();
+                return;
+            }
+
             $('#confirmPaymentBtn').prop('disabled', true).text("Processing...");
             $('#paymentProcessing').show();
 
@@ -1524,6 +1637,26 @@
                 $('#cqiForm').submit();
             }
         });
+
+        // ── Bounceback: applied_code rejected server-side ───────────────────
+        // When store_patient redirects back with withErrors(['applied_code'])
+        // the form re-renders. Auto-open the payment modal, expand the
+        // referral collapse, and render the unified message inline. The
+        // top-of-form banner suppresses this error to avoid duplication.
+        if ($('#applied_code_error_flag').length) {
+            // Seed lastAppliedValue with the repopulated input value so the
+            // user can either re-Apply or fall through to a full-price submit
+            // without re-triggering the typed-but-not-Applied gate.
+            lastAppliedValue = $('#referral_code_input').val().trim();
+            $('#referral_code_error')
+                .text('Discount code not recognized. Please check spelling and try again.')
+                .show();
+            if (referralCollapse) { referralCollapse.show(); }
+            var paymentModalEl = document.getElementById('paymentModal');
+            if (paymentModalEl) {
+                bootstrap.Modal.getOrCreateInstance(paymentModalEl).show();
+            }
+        }
     });
 </script>
 @endsection
