@@ -10,8 +10,8 @@
                 <div class="d-flex gap-2">
                     <a href="{{ url('/dashboard') }}" class="btn btn-primary btn-sm">Clinical Dashboard</a>
                     <a href="{{ url('/dashboard/analytics') }}" class="btn btn-secondary btn-sm">Analytics</a>
-                    <a href="{{ url('/dashboard/waitlist') }}" class="btn btn-secondary btn-sm">
-                        &#x1F4DD; Lip/Eyeliner Waitlist
+                    <a href="{{ url('/dashboard/sponsorship') }}" class="btn btn-secondary btn-sm">
+                        &#x1F4DD; Sponsorship
                     </a>
                 </div>
             </div>
