@@ -745,27 +745,34 @@ class DashboardController extends Controller
         ]);
     }
 
-    // ── Lip/Eyeliner Waitlist ───────────────────────────────────────────
-    public function waitlistDashboard()
+    // ── Sponsored Artist Interest ───────────────────────────────────────
+    public function sponsorshipDashboard()
     {
         if (session()->get('user_type') != 1) {
             abort(403);
         }
 
-        $entries = \App\Models\LipEyelinerWaitlistEntry::orderByDesc('created_at')->get();
+        $entries = \App\Models\PartnerInterestEntry::orderByDesc('created_at')->get();
 
-        return view('dashboards/waitlist', compact('entries'));
+        return view('dashboards/sponsorship', compact('entries'));
     }
 
-    public function exportWaitlist()
+    public function exportSponsorship(\Illuminate\Http\Request $request)
     {
         if (session()->get('user_type') != 1) {
             abort(403);
         }
 
-        $entries = \App\Models\LipEyelinerWaitlistEntry::orderByDesc('created_at')->get();
+        $source = $request->query('source');
 
-        $filename = 'lip_eyeliner_waitlist_' . now()->format('Ymd') . '.csv';
+        $query = \App\Models\PartnerInterestEntry::orderByDesc('created_at');
+        if (in_array($source, ['tattoo', 'pmu'], true)) {
+            $query->where('source_page', $source);
+        }
+        $entries = $query->get();
+
+        $suffix = in_array($source, ['tattoo', 'pmu'], true) ? '_' . $source : '';
+        $filename = 'partner_interest' . $suffix . '_' . now()->format('Ymd') . '.csv';
 
         $headers = [
             'Content-Type'        => 'text/csv',
@@ -774,10 +781,27 @@ class DashboardController extends Controller
 
         return response()->streamDownload(function () use ($entries) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['email', 'created_at']);
+            fputcsv($out, [
+                'name',
+                'email',
+                'shop_name',
+                'shop_location',
+                'procedure_focus',
+                'source_page',
+                'social_handle',
+                'how_did_you_hear',
+                'created_at',
+            ]);
             foreach ($entries as $e) {
                 fputcsv($out, [
+                    $e->name,
                     $e->email,
+                    $e->shop_name,
+                    $e->shop_location,
+                    $e->procedure_focus,
+                    $e->source_page,
+                    $e->social_handle,
+                    $e->how_did_you_hear,
                     $e->created_at ? $e->created_at->format('Y-m-d H:i:s') : '',
                 ]);
             }

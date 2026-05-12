@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,8 +43,8 @@ Route::group(['middleware' => 'auth'], function () {
     Route::post('/dashboard/marketing/qr', 'App\Http\Controllers\DashboardController@generateMarketingQr');
     Route::post('/dashboard/marketing/test-email', 'App\Http\Controllers\DashboardController@sendTestEmail');
     Route::get('/dashboard/flagged_pdf/{id}', 'App\Http\Controllers\DashboardController@downloadFlaggedPdf');
-    Route::get('/dashboard/waitlist', 'App\Http\Controllers\DashboardController@waitlistDashboard');
-    Route::get('/dashboard/waitlist/export', 'App\Http\Controllers\DashboardController@exportWaitlist');
+    Route::get('/dashboard/sponsorship', [DashboardController::class, 'sponsorshipDashboard'])->name('dashboard.sponsorship');
+    Route::get('/dashboard/sponsorship/export', [DashboardController::class, 'exportSponsorship'])->name('dashboard.sponsorship.export');
 });
 
 Route::post('/ajax/record_acknowledgement', 'App\Http\Controllers\UsersController@recordAcknowledgement');
