@@ -653,16 +653,20 @@ class DashboardController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
+        $presets = [
+            'homepage'     => 'https://studiomeds.com',
+            'prescription' => 'https://prescriptions.studiomeds.com',
+            'tattoo'       => 'https://studiomeds.com/tattoo',
+            'pmu'          => 'https://studiomeds.com/pmu',
+        ];
+        $utmSuffix = '?utm_source=qr&utm_medium=print&utm_campaign=studiomeds-qr';
+
         $request->validate([
-            'source'   => ['required', 'string', 'max:60'],
-            'campaign' => ['nullable', 'string', 'max:120'],
+            'preset' => ['required', 'string', 'in:' . implode(',', array_keys($presets))],
         ]);
 
-        $params = ['utm_source' => $request->input('source')];
-        if ($request->filled('campaign')) {
-            $params['utm_campaign'] = $request->input('campaign');
-        }
-        $url = 'https://studiomeds.com?' . http_build_query($params);
+        $displayUrl = $presets[$request->input('preset')];
+        $qrUrl      = $displayUrl . $utmSuffix;
 
         try {
             $svg = QrCode::format('svg')
@@ -670,7 +674,7 @@ class DashboardController extends Controller
                 ->margin(1)
                 ->color(0, 0, 0)
                 ->backgroundColor(255, 255, 255)
-                ->generate($url);
+                ->generate($qrUrl);
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => 'error',
@@ -681,7 +685,7 @@ class DashboardController extends Controller
         return response()->json([
             'status' => 'success',
             'qr'     => 'data:image/svg+xml;base64,' . base64_encode($svg),
-            'url'    => $url,
+            'url'    => $displayUrl,
         ]);
     }
 

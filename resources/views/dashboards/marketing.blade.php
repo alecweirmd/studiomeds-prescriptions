@@ -137,25 +137,13 @@
                                 <h5 class="mb-3">QR Code Generator</h5>
                                 <div class="row g-3" style="max-width:640px;">
                                     <div class="col-md-6">
-                                        <label class="form-label">Source</label>
-                                        <select class="form-select" id="qrSource">
-                                            <option value="facebook">Facebook</option>
-                                            <option value="postcard">Postcard</option>
-                                            <option value="business_card">Business Card</option>
-                                            <option value="instagram">Instagram</option>
-                                            <option value="tiktok">TikTok</option>
-                                            <option value="convention">Convention</option>
-                                            <option value="email">Email</option>
-                                            <option value="other">Other</option>
+                                        <label class="form-label">Destination</label>
+                                        <select class="form-select" id="qrPreset">
+                                            <option value="homepage" selected>Homepage</option>
+                                            <option value="prescription">Prescription site</option>
+                                            <option value="tattoo">Tattoo page</option>
+                                            <option value="pmu">PMU page</option>
                                         </select>
-                                        <div class="mt-2" id="qrSourceOtherWrap" style="display:none;">
-                                            <label class="form-label">Name your source</label>
-                                            <input type="text" class="form-control" id="qrSourceOther" placeholder="e.g. trade_show_booth">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Campaign (optional)</label>
-                                        <input type="text" class="form-control" id="qrCampaign" placeholder="e.g. spring2026">
                                     </div>
                                 </div>
                                 <div class="mt-3 d-flex gap-2">
@@ -430,36 +418,16 @@ $(document).ready(function() {
     });
 
     // ── QR Generator ────────────────────────────────────────────────────
-    // Toggle "Name your source" input when Other is selected
-    $('#qrSource').on('change', function() {
-        if ($(this).val() === 'other') {
-            $('#qrSourceOtherWrap').show();
-        } else {
-            $('#qrSourceOtherWrap').hide();
-            $('#qrSourceOther').val('');
-        }
-    });
-
     $('#qrGenerateBtn').on('click', function() {
         var $btn = $(this);
-        var source = $('#qrSource').val();
-        if (source === 'other') {
-            var custom = $('#qrSourceOther').val().trim();
-            if (!custom) {
-                alert('Please name your source.');
-                return;
-            }
-            source = custom;
-        }
         $btn.prop('disabled', true).text('Generating...');
         $.ajax({
             url: '/dashboard/marketing/qr',
             type: 'POST',
             dataType: 'json',
             data: {
-                _token:   $('meta[name="csrf-token"]').attr('content'),
-                source:   source,
-                campaign: $('#qrCampaign').val().trim(),
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                preset: $('#qrPreset').val(),
             },
         }).done(function(resp) {
             if (resp && resp.qr) {
