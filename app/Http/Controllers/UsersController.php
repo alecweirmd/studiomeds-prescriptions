@@ -183,7 +183,7 @@ class UsersController extends Controller
 
             if (!$recaptchaToken) {
                 return back()->withErrors([
-                    'captcha' => 'Captcha verification failed.'
+                    'captcha' => 'We couldn\'t process your submission. This sometimes happens with shared computer networks or repeat visits. Refresh the page and try again. If it continues to happen, email <a href="mailto:admin@studiomeds.com">admin@studiomeds.com</a> and we\'ll get you sorted.'
                 ])->withInput();
             }
 
@@ -203,7 +203,7 @@ class UsersController extends Controller
             }
 
             if ($captchaData !== null) {
-                Log::info('reCAPTCHA result - score: ' . ($captchaData['score'] ?? 'n/a') . ', action: ' . ($captchaData['action'] ?? 'n/a') . ', success: ' . (($captchaData['success'] ?? false) ? 'true' : 'false') . ', hostname: ' . ($captchaData['hostname'] ?? 'n/a'));
+                Log::warning('reCAPTCHA result - score: ' . ($captchaData['score'] ?? 'n/a') . ', action: ' . ($captchaData['action'] ?? 'n/a') . ', success: ' . (($captchaData['success'] ?? false) ? 'true' : 'false') . ', hostname: ' . ($captchaData['hostname'] ?? 'n/a'));
 
                 if (
                     !($captchaData['success'] ?? false) ||
@@ -211,7 +211,7 @@ class UsersController extends Controller
                     ($captchaData['action'] ?? '') !== 'submit_patient'
                 ) {
                     return back()->withErrors([
-                        'captcha' => 'Suspicious activity detected. Please try again.'
+                        'captcha' => 'We couldn\'t process your submission. This sometimes happens with shared computer networks or repeat visits. Refresh the page and try again. If it continues to happen, email <a href="mailto:admin@studiomeds.com">admin@studiomeds.com</a> and we\'ll get you sorted.'
                     ])->withInput();
                 }
             } else {
