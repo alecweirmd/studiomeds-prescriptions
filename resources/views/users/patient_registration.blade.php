@@ -147,7 +147,8 @@
                     <ul class="mb-0">
                         @foreach ($bannerErrorKeys as $errKey)
                             @foreach ($errors->get($errKey) as $err)
-                            <li>{{ $err }}</li>
+                            {{-- captcha messages carry a mailto link, so render raw; all other keys stay HTML-escaped. --}}
+                            <li>{!! $errKey === 'captcha' ? $err : e($err) !!}</li>
                             @endforeach
                         @endforeach
                     </ul>
