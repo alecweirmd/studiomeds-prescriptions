@@ -19,7 +19,7 @@ class PartnerInterestController extends Controller
                 'shop_name' => ['required', 'string', 'max:255'],
                 'shop_location' => ['required', 'string', 'max:255'],
                 'procedure_focus' => ['required', 'in:tattoo,pmu,both'],
-                'source_page' => ['required', 'in:tattoo,pmu'],
+                'source_page' => ['required', 'in:tattoo,pmu,sponsored-artists'],
                 'social_handle' => ['nullable', 'string', 'max:255'],
                 'how_did_you_hear' => ['nullable', 'string', 'max:5000'],
             ]);
