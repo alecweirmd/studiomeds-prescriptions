@@ -32,12 +32,16 @@ class PatientsCQI extends Model
         'follow_up_sent_at',
         'reengagement_sent_at',
         'review_sent_at',
+        'prescription_paths',
+        'prescription_issued_at',
     ];
 
     protected $casts = [
-        'follow_up_sent_at'    => 'datetime',
-        'reengagement_sent_at' => 'datetime',
-        'review_sent_at'       => 'datetime',
+        'follow_up_sent_at'      => 'datetime',
+        'reengagement_sent_at'   => 'datetime',
+        'review_sent_at'         => 'datetime',
+        'prescription_paths'     => 'array',
+        'prescription_issued_at' => 'datetime',
     ];
 
     public function patient()

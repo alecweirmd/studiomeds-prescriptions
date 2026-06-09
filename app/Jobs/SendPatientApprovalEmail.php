@@ -11,6 +11,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class SendPatientApprovalEmail implements ShouldQueue
 {
@@ -21,9 +22,17 @@ class SendPatientApprovalEmail implements ShouldQueue
 
     protected int $patientId;
 
-    public function __construct(int $patientId)
+    /**
+     * Optional issuance record [{key, name, path}] of stored prescription PDFs.
+     * When provided and the files exist, attachments are served from disk
+     * (preserving the issued document); otherwise PDFs are regenerated fresh.
+     */
+    protected ?array $storedPaths;
+
+    public function __construct(int $patientId, ?array $storedPaths = null)
     {
-        $this->patientId = $patientId;
+        $this->patientId   = $patientId;
+        $this->storedPaths = $storedPaths;
     }
 
     public function handle(): void
@@ -33,9 +42,7 @@ class SendPatientApprovalEmail implements ShouldQueue
         $procedure = $patient->procedure_type;
 
         if ($procedure === 'lip_blush' || $procedure === 'eyeliner') {
-            $file = storage_path("app/zensa_{$this->patientId}.pdf");
-
-            Pdf::loadView('pdf/zensa', ['patient' => $patient])->save($file);
+            [$file, $cleanup] = $this->resolveAttachment('zensa', 'pdf/zensa', $patient);
 
             Mail::send('emails/patient_approved_facial', ['patient' => $patient], function ($message) use ($patient, $file) {
                 $message->to($patient->email)
@@ -43,16 +50,15 @@ class SendPatientApprovalEmail implements ShouldQueue
                     ->attach($file, ['as' => 'Zensa Prescription.pdf']);
             });
 
-            @unlink($file);
+            if ($cleanup) {
+                @unlink($file);
+            }
             return;
         }
 
         // Default branch: tattoo, brow_pmu, or unset procedure_type (legacy patients)
-        $file1 = storage_path("app/bactine_{$this->patientId}.pdf");
-        $file2 = storage_path("app/lidocaine_{$this->patientId}.pdf");
-
-        Pdf::loadView('pdf/bactine', ['patient' => $patient])->save($file1);
-        Pdf::loadView('pdf/lidocaine', ['patient' => $patient])->save($file2);
+        [$file1, $cleanup1] = $this->resolveAttachment('bactine', 'pdf/bactine', $patient);
+        [$file2, $cleanup2] = $this->resolveAttachment('lidocaine', 'pdf/lidocaine', $patient);
 
         Mail::send('emails/patient_approved', ['patient' => $patient], function ($message) use ($patient, $file1, $file2) {
             $message->to($patient->email)
@@ -61,8 +67,32 @@ class SendPatientApprovalEmail implements ShouldQueue
                 ->attach($file2, ['as' => 'Lidocaine Cream.pdf']);
         });
 
-        @unlink($file1);
-        @unlink($file2);
+        if ($cleanup1) {
+            @unlink($file1);
+        }
+        if ($cleanup2) {
+            @unlink($file2);
+        }
+    }
+
+    /**
+     * Resolve the absolute path to attach for a document. Prefers the stored
+     * PDF when available; otherwise regenerates to a temp file.
+     *
+     * @return array{0:string, 1:bool} [absolutePath, shouldUnlinkAfterSend]
+     */
+    private function resolveAttachment(string $key, string $view, Patients $patient): array
+    {
+        foreach ($this->storedPaths ?? [] as $doc) {
+            if (($doc['key'] ?? null) === $key && !empty($doc['path']) && Storage::exists($doc['path'])) {
+                return [Storage::path($doc['path']), false];
+            }
+        }
+
+        $file = storage_path("app/{$key}_{$this->patientId}.pdf");
+        Pdf::loadView($view, ['patient' => $patient])->save($file);
+
+        return [$file, true];
     }
 
     public function failed(\Throwable $e): void

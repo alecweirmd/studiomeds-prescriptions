@@ -10,11 +10,14 @@ use App\Models\FormStart;
 use App\Models\UtmVisit;
 use App\Models\DiscountCode;
 use App\Models\DiscountRedemption;
+use App\Models\PrescriptionAccessLog;
+use App\Services\PrescriptionService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class DashboardController extends Controller
@@ -242,16 +245,34 @@ class DashboardController extends Controller
         $patient->patientsCQI->status = 1;
         $patient->patientsCQI->save();
 
-        // Dispatch emails as background jobs
-        \App\Jobs\SendPatientApprovalEmail::dispatch($patient->id);
+        // Persist the prescription PDFs to disk at approval time (storage layer)
+        $this->persistPrescription($patient);
 
-        if ($patient->artist_id) {
-            \App\Jobs\SendArtistApprovalEmail::dispatch($patient->id, $patient->artist_id);
-        }
+        // Dispatch the patient approval email as a background job
+        \App\Jobs\SendPatientApprovalEmail::dispatch($patient->id);
 
         Session::flash('type', 'success');
         Session::flash('message', 'Patient approved.');
         return redirect('/dashboard');
+    }
+
+    /**
+     * Generate and persist the patient's prescription PDFs, recording the
+     * issuance on the CQI row. Best-effort: a PDF failure must not block approval.
+     */
+    private function persistPrescription(Patients $patient): void
+    {
+        try {
+            $stored = (new PrescriptionService())->storeFor($patient);
+
+            if ($cqi = $patient->patientsCQI) {
+                $cqi->prescription_paths     = $stored;
+                $cqi->prescription_issued_at = now();
+                $cqi->save();
+            }
+        } catch (\Throwable $e) {
+            Log::error("Failed to persist prescription for patient {$patient->id}: " . $e->getMessage());
+        }
     }
 
     public function approveAllPatients()
@@ -267,11 +288,9 @@ class DashboardController extends Controller
             $patient->patientsCQI->status = 1;
             $patient->patientsCQI->save();
 
-            \App\Jobs\SendPatientApprovalEmail::dispatch($patient->id);
+            $this->persistPrescription($patient);
 
-            if ($patient->artist_id) {
-                \App\Jobs\SendArtistApprovalEmail::dispatch($patient->id, $patient->artist_id);
-            }
+            \App\Jobs\SendPatientApprovalEmail::dispatch($patient->id);
         }
 
         Session::flash('type', 'success');
@@ -483,6 +502,102 @@ class DashboardController extends Controller
         return response(Storage::get('flagged_submissions/' . $ack->pdf_path), 200, [
             'Content-Type'        => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="' . $ack->pdf_path . '"',
+        ]);
+    }
+
+    // ── Clinical Prescription (view / download / resend) ────────────────
+
+    /**
+     * Serve a prescription PDF inline (opens in a new browser tab).
+     */
+    public function prescriptionView(Request $request, $id, $doc = null)
+    {
+        [$patient, $document, $service] = $this->resolvePrescription($id, $doc);
+
+        $this->logPrescriptionAccess($request, $patient, 'view', $document['key']);
+
+        return response($service->pdfBytes($patient, $document['key']), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $document['name'] . '.pdf"',
+        ]);
+    }
+
+    /**
+     * Serve a prescription PDF as a download.
+     */
+    public function prescriptionDownload(Request $request, $id, $doc = null)
+    {
+        [$patient, $document, $service] = $this->resolvePrescription($id, $doc);
+
+        $this->logPrescriptionAccess($request, $patient, 'download', $document['key']);
+
+        return response($service->pdfBytes($patient, $document['key']), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $document['name'] . '.pdf"',
+        ]);
+    }
+
+    /**
+     * Resend the patient approval email (patient only — no artist copy).
+     */
+    public function prescriptionResend(Request $request, $id)
+    {
+        if (session()->get('user_type') != 1) {
+            abort(403);
+        }
+
+        $patient = Patients::findOrFail($id);
+
+        if (!$patient->patientsCQI || $patient->patientsCQI->status != 1) {
+            Session::flash('type', 'error');
+            Session::flash('message', 'Prescription can only be resent for approved patients.');
+            return redirect()->back();
+        }
+
+        // Attach the stored PDF(s) when present (preserves the issued document);
+        // legacy approvals with no stored paths fall back to fresh regeneration.
+        $storedPaths = $patient->patientsCQI->prescription_paths ?: null;
+        \App\Jobs\SendPatientApprovalEmail::dispatch($patient->id, $storedPaths);
+
+        $this->logPrescriptionAccess($request, $patient, 'resend', null);
+
+        Session::flash('type', 'success');
+        Session::flash('message', 'Prescription email resent to ' . $patient->email . '.');
+        return redirect()->back();
+    }
+
+    /**
+     * Guard + load a patient and resolve the requested prescription document.
+     * Only user_type 1 (clinical) may access; patient must be approved.
+     *
+     * @return array{0:Patients,1:array,2:PrescriptionService}
+     */
+    private function resolvePrescription($id, $doc): array
+    {
+        if (session()->get('user_type') != 1) {
+            abort(403);
+        }
+
+        $patient = Patients::findOrFail($id);
+
+        if (!$patient->patientsCQI || $patient->patientsCQI->status != 1) {
+            abort(404, 'No approved prescription for this patient.');
+        }
+
+        $service  = new PrescriptionService();
+        $document = $service->documentByKey($patient, $doc);
+
+        return [$patient, $document, $service];
+    }
+
+    private function logPrescriptionAccess(Request $request, Patients $patient, string $action, ?string $document): void
+    {
+        PrescriptionAccessLog::create([
+            'admin_user_id' => Auth::id(),
+            'patient_id'    => $patient->id,
+            'action'        => $action,
+            'document'      => $document,
+            'ip_address'    => $request->ip(),
         ]);
     }
 

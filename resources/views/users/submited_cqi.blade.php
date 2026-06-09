@@ -243,6 +243,32 @@
                 <a class="btn btn-success approve" data-id="{{ $patient->id }}">Approve</a>
             </div>
             @endif
+
+            @if($patient->patientsCQI && $patient->patientsCQI->status == 1)
+            @php
+                $rxDocs = (new \App\Services\PrescriptionService())->documentsFor($patient);
+            @endphp
+            <div class="card mt-4" id="prescriptionSection">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h3 class="mb-0">Prescription</h3>
+                    <a class="btn btn-outline-warning btn-sm resend-rx" data-id="{{ $patient->id }}">Resend Approval Email</a>
+                </div>
+                <div class="card-body">
+                    @foreach($rxDocs as $rxDoc)
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 py-2 @if(!$loop->last) border-bottom @endif">
+                        <span class="fw-semibold">{{ $rxDoc['label'] }}</span>
+                        <div class="d-flex gap-2">
+                            <a class="btn btn-outline-primary btn-sm"
+                               href="/dashboard/patient/{{ $patient->id }}/prescription/view/{{ $rxDoc['key'] }}"
+                               target="_blank" rel="noopener">View PDF</a>
+                            <a class="btn btn-primary btn-sm"
+                               href="/dashboard/patient/{{ $patient->id }}/prescription/download/{{ $rxDoc['key'] }}">Download PDF</a>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 </div>
@@ -264,6 +290,27 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="resendModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Resend Approval Email</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                This will email the patient a fresh copy of their approval, with the prescription PDF(s) attached. Continue?
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="resendForm" method="POST" action="" class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-warning">Resend Email</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('script')
@@ -273,6 +320,13 @@
         let id = $(this).data('id');
         $('#confirmApprove').attr('href', '/dashboard/approve_patient/' + id);
         $('#approveModal').modal('show');
+    });
+
+    $(document).on('click', '.resend-rx', function(e) {
+        e.preventDefault();
+        let id = $(this).data('id');
+        $('#resendForm').attr('action', '/dashboard/patient/' + id + '/prescription/resend');
+        $('#resendModal').modal('show');
     });
 </script>
 @endsection
