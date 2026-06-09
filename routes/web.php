@@ -43,6 +43,9 @@ Route::group(['middleware' => 'auth'], function () {
     Route::post('/dashboard/marketing/qr', 'App\Http\Controllers\DashboardController@generateMarketingQr');
     Route::post('/dashboard/marketing/test-email', 'App\Http\Controllers\DashboardController@sendTestEmail');
     Route::get('/dashboard/flagged_pdf/{id}', 'App\Http\Controllers\DashboardController@downloadFlaggedPdf');
+    Route::get('/dashboard/patient/{id}/prescription/view/{doc?}', 'App\Http\Controllers\DashboardController@prescriptionView');
+    Route::get('/dashboard/patient/{id}/prescription/download/{doc?}', 'App\Http\Controllers\DashboardController@prescriptionDownload');
+    Route::post('/dashboard/patient/{id}/prescription/resend', 'App\Http\Controllers\DashboardController@prescriptionResend');
     Route::get('/dashboard/sponsorship', [DashboardController::class, 'sponsorshipDashboard'])->name('dashboard.sponsorship');
     Route::get('/dashboard/sponsorship/export', [DashboardController::class, 'exportSponsorship'])->name('dashboard.sponsorship.export');
 });
