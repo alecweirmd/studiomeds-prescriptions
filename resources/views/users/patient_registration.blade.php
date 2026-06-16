@@ -165,6 +165,17 @@
                 </div>
                 @endif
 
+                {{-- reCAPTCHA v2 checkbox fallback: rendered after a v3 score rejection
+                     (server flashes show_recaptcha_v2_fallback). The patient proves they're
+                     human here, then resubmits. The widget is rendered by grecaptcha into
+                     #recaptcha-v2-widget on load (see the script block below). --}}
+                @if (session('show_recaptcha_v2_fallback'))
+                <div class="alert alert-warning" id="recaptcha-v2-wrap">
+                    <p class="mb-2">Please complete the verification below to continue.</p>
+                    <div id="recaptcha-v2-widget"></div>
+                </div>
+                @endif
+
 
 
 
@@ -1574,7 +1585,81 @@
             });
         });
 
-        // ── Complete free evaluation (no payment) ───────────────────────────
+        // ── reCAPTCHA helpers (shared by the free + paid submit handlers) ─────
+        var recaptchaV3SiteKey  = '{{ config("services.recaptcha.site_key") }}';
+        var recaptchaV2SiteKey  = '{{ config("services.recaptcha.v2_site_key") }}';
+        var recaptchaV2Active   = {{ session('show_recaptcha_v2_fallback') ? 'true' : 'false' }};
+        var recaptchaV2WidgetId = null;
+
+        // When the server has bounced us into the v2 fallback (v3 score too low),
+        // render the checkbox widget. Uses the grecaptcha API already loaded for v3
+        // (api.js exposes render() regardless of the ?render= v3 key). api.js is
+        // async, so poll until it's available before rendering.
+        function renderRecaptchaV2WhenReady(attempts) {
+            attempts = attempts || 0;
+            if (typeof grecaptcha !== 'undefined' && typeof grecaptcha.render === 'function') {
+                try {
+                    recaptchaV2WidgetId = grecaptcha.render('recaptcha-v2-widget', { sitekey: recaptchaV2SiteKey });
+                } catch (e) { /* already rendered / unavailable */ }
+            } else if (attempts < 50) {
+                setTimeout(function() { renderRecaptchaV2WhenReady(attempts + 1); }, 200);
+            }
+        }
+        if (recaptchaV2Active && recaptchaV2SiteKey) {
+            renderRecaptchaV2WhenReady();
+        }
+
+        // Append-or-update a hidden input on the form.
+        function setCqiHidden(name, value) {
+            var $existing = $('#cqiForm').find('input[name="' + name + '"]');
+            if ($existing.length) { $existing.val(value); }
+            else { $('<input type="hidden">').attr('name', name).val(value).appendTo('#cqiForm'); }
+        }
+
+        // Draw attention to the v2 widget when the patient tried to submit without
+        // solving it (closes the payment modal first so the widget is visible).
+        function highlightRecaptchaV2() {
+            var pmEl = document.getElementById('paymentModal');
+            if (pmEl) {
+                var inst = bootstrap.Modal.getInstance(pmEl);
+                if (inst) { inst.hide(); }
+            }
+            var $w = $('#recaptcha-v2-wrap');
+            if ($w.length) {
+                $w.css({ outline: '2px solid #dc3545', 'border-radius': '4px' });
+                $w[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // Run the appropriate captcha then call onProceed() to submit. When the v2
+        // fallback is active it requires the solved checkbox token; otherwise it runs
+        // the invisible v3 check. onError(reason) fires on any blocker. If grecaptcha
+        // is unavailable the v3 branch proceeds (server-side fail-open still applies).
+        function submitWithCaptcha(onProceed, onError) {
+            if (recaptchaV2Active) {
+                var v2Resp = (recaptchaV2WidgetId !== null && typeof grecaptcha !== 'undefined')
+                    ? grecaptcha.getResponse(recaptchaV2WidgetId) : '';
+                if (!v2Resp) {
+                    if (onError) { onError('v2-incomplete'); }
+                    return;
+                }
+                setCqiHidden('recaptcha_v2_token', v2Resp);
+                onProceed();
+                return;
+            }
+            if (recaptchaV3SiteKey && typeof grecaptcha !== 'undefined') {
+                grecaptcha.ready(function() {
+                    grecaptcha.execute(recaptchaV3SiteKey, { action: 'submit_patient' })
+                        .then(function(token) {
+                            setCqiHidden('recaptcha_token', token);
+                            onProceed();
+                        }).catch(function() { if (onError) { onError('v3-error'); } });
+                });
+            } else {
+                onProceed();
+            }
+        }
+
         $('#completeFreeBtn').on('click', function() {
             if (couponApplyBlocked()) {
                 fireCouponApplyGate();
@@ -1590,32 +1675,20 @@
                 $('#cqiForm input[name="payment_amount"]').val('0.00');
             }
 
-            var siteKey = '{{ config("services.recaptcha.site_key") }}';
-
             function submitFree() {
                 paymentReady = true;
                 $('#cqiForm').submit();
             }
 
-            if (siteKey && typeof grecaptcha !== 'undefined') {
-                grecaptcha.ready(function() {
-                    grecaptcha.execute(siteKey, { action: 'submit_patient' })
-                        .then(function(token) {
-                            if ($('#recaptcha_token').length === 0) {
-                                $('<input>').attr({ type: 'hidden', id: 'recaptcha_token', name: 'recaptcha_token', value: token }).appendTo('#cqiForm');
-                            } else {
-                                $('#recaptcha_token').val(token);
-                            }
-                            submitFree();
-                        }).catch(function() {
-                            $('#completeFreeBtn').prop('disabled', false).text('Complete My Evaluation');
-                            $('#paymentProcessing').hide();
-                            alert('Something went wrong. Please try again.');
-                        });
-                });
-            } else {
-                submitFree();
-            }
+            submitWithCaptcha(submitFree, function(reason) {
+                $('#completeFreeBtn').prop('disabled', false).text('Complete My Evaluation');
+                $('#paymentProcessing').hide();
+                if (reason === 'v2-incomplete') {
+                    highlightRecaptchaV2();
+                } else {
+                    alert('Something went wrong. Please try again.');
+                }
+            });
         });
 
         $('#confirmPaymentBtn').on('click', function() {
@@ -1646,31 +1719,20 @@
             $('<input type="hidden" name="card_cvc">').val($('#modal_cvc').val()).appendTo('#cqiForm');
             $('<input type="hidden" name="payment_amount">').val($('#modal_payment_amount').val()).appendTo('#cqiForm');
 
-            var siteKey = '{{ config("services.recaptcha.site_key") }}';
-
-            function onError() {
+            function onError(reason) {
                 $('#confirmPaymentBtn').prop('disabled', false).text("Pay & Submit");
                 $('#paymentProcessing').hide();
-                alert('Something went wrong. Please try again.');
+                if (reason === 'v2-incomplete') {
+                    highlightRecaptchaV2();
+                } else {
+                    alert('Something went wrong. Please try again.');
+                }
             }
 
-            if (siteKey && typeof grecaptcha !== 'undefined') {
-                grecaptcha.ready(function() {
-                    grecaptcha.execute(siteKey, { action: 'submit_patient' })
-                        .then(function(token) {
-                            if ($('#recaptcha_token').length === 0) {
-                                $('<input>').attr({ type: 'hidden', id: 'recaptcha_token', name: 'recaptcha_token', value: token }).appendTo('#cqiForm');
-                            } else {
-                                $('#recaptcha_token').val(token);
-                            }
-                            paymentReady = true;
-                            $('#cqiForm').submit();
-                        }).catch(function() { onError(); });
-                });
-            } else {
+            submitWithCaptcha(function() {
                 paymentReady = true;
                 $('#cqiForm').submit();
-            }
+            }, onError);
         });
 
         // ── Bounceback: applied_code rejected server-side ───────────────────
@@ -1693,27 +1755,36 @@
             }
         }
 
-        // ── Bounceback: payment failure (Step 2 recovery) ───────────────────
+        // ── Bounceback: payment failure (Step 2) + captcha v2 fallback (Step 1) ──
         // The verification + payment sections are display:none by default and are
         // revealed by the interactive Didit/manual flow, which does not survive a
-        // full page reload. On a recoverable/transient payment bounceback, restore
-        // that view state from old() and reopen the payment modal so the patient
-        // can retry. Didit-verified patients keep their verification (didit_verified
-        // preserved via old()); manual-upload patients re-enter the upload section
-        // to re-attach their ID images (browsers never repopulate file inputs).
-        // Unrecoverable failures intentionally do NOT reopen the modal — the banner
-        // shows the email-admin message with no retry call to action.
-        @if ($errors->has('payment_recoverable') || $errors->has('payment_transient'))
+        // full page reload. On a recoverable/transient payment bounceback OR a v3
+        // score rejection (v2 fallback), restore that view state from old() so the
+        // patient can complete their retry. Didit-verified patients keep their
+        // verification (didit_verified preserved via old()); manual-upload patients
+        // re-enter the upload section to re-attach their ID images (browsers never
+        // repopulate file inputs).
+        //
+        // Modal handling differs by case:
+        //  - payment recoverable/transient: reopen the payment modal so the patient
+        //    can re-enter card details.
+        //  - v2 fallback: do NOT reopen the modal — the v2 widget sits at the top of
+        //    the form and must stay visible; the patient solves it, then proceeds.
+        //  - payment unrecoverable: nothing reopens (banner shows email-admin, no retry).
+        @php $v2FallbackActive = session('show_recaptcha_v2_fallback'); @endphp
+        @if ($errors->has('payment_recoverable') || $errors->has('payment_transient') || $v2FallbackActive)
             @if (old('didit_verified') === '1')
                 $('#didit-verify-btn').hide();
             @else
                 showManualFallback();
             @endif
             showPostVerification();
-            var paymentRetryModalEl = document.getElementById('paymentModal');
-            if (paymentRetryModalEl) {
-                bootstrap.Modal.getOrCreateInstance(paymentRetryModalEl).show();
-            }
+            @if (!$v2FallbackActive)
+                var paymentRetryModalEl = document.getElementById('paymentModal');
+                if (paymentRetryModalEl) {
+                    bootstrap.Modal.getOrCreateInstance(paymentRetryModalEl).show();
+                }
+            @endif
         @endif
     });
 </script>
