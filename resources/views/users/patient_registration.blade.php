@@ -140,6 +140,12 @@
                      duplicate the inline render at #referral_code_error. --}}
                 @php
                     $bannerErrorKeys = collect($errors->keys())->reject(fn($k) => $k === 'applied_code');
+                    // Keys whose messages carry trusted server-built HTML (mailto links)
+                    // and must render raw. All other keys stay HTML-escaped.
+                    $rawHtmlErrorKeys = ['captcha', 'payment_recoverable', 'payment_unrecoverable', 'payment_transient'];
+                    // Manual-upload patients lose their ID images on a bounceback (browsers
+                    // never repopulate file inputs); Didit-verified patients keep verification.
+                    $isManualUploadBounceback = old('didit_verified') !== '1';
                 @endphp
                 @if ($bannerErrorKeys->isNotEmpty())
                 <div class="alert alert-danger">
@@ -147,9 +153,13 @@
                     <ul class="mb-0">
                         @foreach ($bannerErrorKeys as $errKey)
                             @foreach ($errors->get($errKey) as $err)
-                            {{-- captcha messages carry a mailto link, so render raw; all other keys stay HTML-escaped. --}}
-                            <li>{!! $errKey === 'captcha' ? $err : e($err) !!}</li>
+                            <li>{!! in_array($errKey, $rawHtmlErrorKeys, true) ? $err : e($err) !!}</li>
                             @endforeach
+                            {{-- On a payment bounceback, manual-upload patients must re-attach
+                                 their ID images; tell them so (and that the rest is saved). --}}
+                            @if (\Illuminate\Support\Str::startsWith($errKey, 'payment_') && $isManualUploadBounceback)
+                            <li>You'll need to re-upload your ID images. Your other information is saved.</li>
+                            @endif
                         @endforeach
                     </ul>
                 </div>
@@ -312,7 +322,10 @@
                         </div>
                     </div>
 
-                    <input type="hidden" name="didit_verified" id="didit_verified" value="0">
+                    {{-- Preserve Didit verification across a server-side bounceback (e.g. a
+                         payment failure) so verified patients are not forced to re-verify on
+                         retry. Defaults to '0' on a fresh load. --}}
+                    <input type="hidden" name="didit_verified" id="didit_verified" value="{{ old('didit_verified', '0') }}">
                 </div>
 
                 {{-- Didit iframe modal overlay --}}
@@ -1679,6 +1692,29 @@
                 bootstrap.Modal.getOrCreateInstance(paymentModalEl).show();
             }
         }
+
+        // ── Bounceback: payment failure (Step 2 recovery) ───────────────────
+        // The verification + payment sections are display:none by default and are
+        // revealed by the interactive Didit/manual flow, which does not survive a
+        // full page reload. On a recoverable/transient payment bounceback, restore
+        // that view state from old() and reopen the payment modal so the patient
+        // can retry. Didit-verified patients keep their verification (didit_verified
+        // preserved via old()); manual-upload patients re-enter the upload section
+        // to re-attach their ID images (browsers never repopulate file inputs).
+        // Unrecoverable failures intentionally do NOT reopen the modal — the banner
+        // shows the email-admin message with no retry call to action.
+        @if ($errors->has('payment_recoverable') || $errors->has('payment_transient'))
+            @if (old('didit_verified') === '1')
+                $('#didit-verify-btn').hide();
+            @else
+                showManualFallback();
+            @endif
+            showPostVerification();
+            var paymentRetryModalEl = document.getElementById('paymentModal');
+            if (paymentRetryModalEl) {
+                bootstrap.Modal.getOrCreateInstance(paymentRetryModalEl).show();
+            }
+        @endif
     });
 </script>
 @endsection

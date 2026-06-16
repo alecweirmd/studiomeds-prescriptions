@@ -351,8 +351,22 @@ class UsersController extends Controller
                 );
 
             if (!$paymentSuccess['success']) {
+                // Route the failure to a recovery bucket and surface the
+                // COO-approved copy for that bucket. The bucket-specific error
+                // key (payment_recoverable|payment_unrecoverable|payment_transient)
+                // drives both the copy and the bounceback behaviour in the view
+                // (recoverable/transient reopen the payment modal; unrecoverable
+                // shows the email-admin message with no retry CTA).
+                $bucket = $this->classifyPaymentError($paymentSuccess['error_code'] ?? null);
+
+                $paymentErrorCopy = [
+                    'recoverable'   => 'Card was declined. Try a different card or contact your bank.',
+                    'unrecoverable' => 'We couldn\'t process this payment. Email <a href="mailto:admin@studiomeds.com">admin@studiomeds.com</a> for help.',
+                    'transient'     => 'Something went wrong processing your payment. Please try again in a moment. If you keep seeing this, email <a href="mailto:admin@studiomeds.com">admin@studiomeds.com</a> and we\'ll help sort it out.',
+                ];
+
                 return back()
-                    ->withErrors(['payment' => 'Payment failed: ' . $paymentSuccess['message']])
+                    ->withErrors(['payment_' . $bucket => $paymentErrorCopy[$bucket]])
                     ->withInput();
             }
         }
@@ -602,6 +616,43 @@ class UsersController extends Controller
             session()->flash('completed_procedure_type', $patient->procedure_type);
 
             return redirect('users/thank_you/');
+    }
+
+    /**
+     * Classify an Authorize.net charge failure into a recovery bucket so the
+     * payment bounceback can show the right COO-approved copy and behaviour.
+     *
+     * - recoverable:   card-level problems the patient can fix themselves —
+     *                  declines, invalid number, CVV/AVS, duplicate. Copy invites
+     *                  trying a different card or contacting the bank.
+     * - unrecoverable: merchant/account/processor config the patient cannot fix
+     *                  (e.g. code 17, "merchant doesn't accept this card type").
+     *                  Copy routes them to admin@studiomeds.com, no retry CTA.
+     * - transient:     gateway unreachable / unparseable response / exception —
+     *                  no error_code returned (or 'unknown'). Retrying may work.
+     *
+     * Unmapped numeric codes default to 'transient' (per PM decision): safest —
+     * it invites a retry without falsely blaming the card or sending the patient
+     * to admin. If production logs surface a recurring unmapped code, add it to
+     * the appropriate list here.
+     */
+    private function classifyPaymentError(?string $errorCode): string
+    {
+        if ($errorCode === null || $errorCode === '' || $errorCode === 'unknown') {
+            return 'transient';
+        }
+
+        $recoverable   = ['2', '6', '11', '27', '37', '65', '78', '200', '251'];
+        $unrecoverable = ['17', '19', '26', '33', '50', '250', '252'];
+
+        if (in_array($errorCode, $recoverable, true)) {
+            return 'recoverable';
+        }
+        if (in_array($errorCode, $unrecoverable, true)) {
+            return 'unrecoverable';
+        }
+
+        return 'transient';
     }
 
     public function show_cqi($patient_id)

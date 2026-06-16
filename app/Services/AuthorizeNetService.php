@@ -248,8 +248,9 @@ class AuthorizeNetService {
             ]);
 
             return [
-                'success' => false,
-                'message' => $errorMsg,
+                'success'    => false,
+                'message'    => $errorMsg,
+                'error_code' => $errorCode,
             ];
         } catch (\Exception $e) {
             Log::error('AuthorizeNet chargeOneTime exception: ' . $e->getMessage(), ['exception' => $e]);
