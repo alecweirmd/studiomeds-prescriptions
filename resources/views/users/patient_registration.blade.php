@@ -1394,8 +1394,28 @@
             if (this.value.length === 2) { $('#modal_cvc').focus(); }
         });
 
-        // ── Card-field format validation (matches server-side rules in
-        //    UsersController::store_patient — keep regexes in sync) ──────────
+        // Luhn (mod-10) checksum. Network-agnostic: validates 15-digit AmEx and
+        // 16-digit Visa/MC/Discover by the same algorithm, no card-type branching.
+        // Client-side only — server-side card validity is Authorize.net's job.
+        // Assumes a digit-only string; callers gate on /^\d{13,19}$/ first.
+        function luhnValid(num) {
+            var sum = 0;
+            var alt = false;
+            for (var i = num.length - 1; i >= 0; i--) {
+                var d = parseInt(num.charAt(i), 10);
+                if (alt) {
+                    d *= 2;
+                    if (d > 9) { d -= 9; }
+                }
+                sum += d;
+                alt = !alt;
+            }
+            return sum % 10 === 0;
+        }
+
+        // ── Card-field format validation (digit-format regexes match server-side
+        //    rules in UsersController::store_patient — keep those in sync. The
+        //    Luhn check is client-side only and has no server-side counterpart) ──
         function validateCardFields() {
             var invalid = [];
             var num   = $('#modal_card_number').val().trim();
@@ -1403,7 +1423,8 @@
             var year  = $('#modal_exp_year').val().trim();
             var cvc   = $('#modal_cvc').val().trim();
 
-            if (!/^\d{13,19}$/.test(num)) { invalid.push('#modal_card_number'); }
+            // Digit-format gate first (short-circuits), then Luhn on a clean digit string.
+            if (!/^\d{13,19}$/.test(num) || !luhnValid(num)) { invalid.push('#modal_card_number'); }
             var monthInt = parseInt(month, 10);
             if (!/^\d{2}$/.test(month) || monthInt < 1 || monthInt > 12) { invalid.push('#modal_exp_month'); }
             if (!/^\d{2}$/.test(year)) { invalid.push('#modal_exp_year'); }
