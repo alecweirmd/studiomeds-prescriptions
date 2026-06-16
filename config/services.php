@@ -39,6 +39,9 @@ return [
         'site_key'        => env('RECAPTCHA_SITE_KEY'),
         'secret_key'      => env('RECAPTCHA_SECRET_KEY'),
         'score_threshold' => env('RECAPTCHA_SCORE_THRESHOLD', 0.3),
+        // v2 checkbox fallback — shown when a v3 score rejection bounces the patient back.
+        'v2_site_key'     => env('RECAPTCHA_V2_SITE_KEY'),
+        'v2_secret_key'   => env('RECAPTCHA_V2_SECRET_KEY'),
     ],
     'authorize' => [
         'login_id' => env('AUTHORIZE_LOGIN_ID'),

@@ -179,43 +179,57 @@ class UsersController extends Controller
     {
 
         if (app()->environment('production')) {
-            $recaptchaToken = $request->input('recaptcha_token');
+            $captchaRejectionCopy = 'We couldn\'t process your submission. This sometimes happens with shared computer networks or repeat visits. Refresh the page and try again. If it continues to happen, email <a href="mailto:admin@studiomeds.com">admin@studiomeds.com</a> and we\'ll get you sorted.';
 
-            if (!$recaptchaToken) {
-                return back()->withErrors([
-                    'captcha' => 'We couldn\'t process your submission. This sometimes happens with shared computer networks or repeat visits. Refresh the page and try again. If it continues to happen, email <a href="mailto:admin@studiomeds.com">admin@studiomeds.com</a> and we\'ll get you sorted.'
-                ])->withInput();
-            }
+            $recaptchaV2Token = $request->input('recaptcha_v2_token');
+            $recaptchaToken   = $request->input('recaptcha_token');
 
-            try {
-                $response = Http::timeout(5)->asForm()->post(
-                    'https://www.google.com/recaptcha/api/siteverify',
-                    [
-                        'secret'   => config('services.recaptcha.secret_key'),
-                        'response' => $recaptchaToken,
-                        'remoteip' => $request->ip(),
-                    ]
-                );
-                $captchaData = $response->json();
-            } catch (\Exception $e) {
-                Log::warning('reCAPTCHA verification unavailable: ' . $e->getMessage());
-                $captchaData = null;
-            }
+            if ($recaptchaV2Token) {
+                // ── v2 checkbox fallback ──────────────────────────────────────
+                // The patient was bounced from a v3 score rejection and solved the
+                // "I'm not a robot" challenge. Verify against the v2 secret.
+                $captchaData = $this->verifyRecaptcha(config('services.recaptcha.v2_secret_key'), $recaptchaV2Token, $request->ip());
 
-            if ($captchaData !== null) {
-                Log::warning('reCAPTCHA result - score: ' . ($captchaData['score'] ?? 'n/a') . ', action: ' . ($captchaData['action'] ?? 'n/a') . ', success: ' . (($captchaData['success'] ?? false) ? 'true' : 'false') . ', hostname: ' . ($captchaData['hostname'] ?? 'n/a'));
+                if ($captchaData !== null) {
+                    Log::warning('reCAPTCHA result - token_type: v2, action: submit_patient, success: ' . (($captchaData['success'] ?? false) ? 'true' : 'false') . ', hostname: ' . ($captchaData['hostname'] ?? 'n/a'));
 
-                if (
-                    !($captchaData['success'] ?? false) ||
-                    ($captchaData['score'] ?? 0) < config('services.recaptcha.score_threshold') ||
-                    ($captchaData['action'] ?? '') !== 'submit_patient'
-                ) {
-                    return back()->withErrors([
-                        'captcha' => 'We couldn\'t process your submission. This sometimes happens with shared computer networks or repeat visits. Refresh the page and try again. If it continues to happen, email <a href="mailto:admin@studiomeds.com">admin@studiomeds.com</a> and we\'ll get you sorted.'
-                    ])->withInput();
+                    if (!($captchaData['success'] ?? false)) {
+                        // v2 failed — end of the recovery line. Keep the widget up.
+                        return back()
+                            ->with('show_recaptcha_v2_fallback', true)
+                            ->withErrors(['captcha' => $captchaRejectionCopy])
+                            ->withInput();
+                    }
+                    // v2 success → fall through and proceed.
+                } else {
+                    // v2 verify service unavailable → fail open (mirrors v3 behaviour).
+                    Log::warning("reCAPTCHA v2 skipped for patient submission (service unavailable), IP: {$request->ip()}");
                 }
             } else {
-                Log::warning("reCAPTCHA skipped for patient submission (service unavailable), IP: {$request->ip()}");
+                // ── v3 invisible check (default path) ─────────────────────────
+                if (!$recaptchaToken) {
+                    return back()->withErrors(['captcha' => $captchaRejectionCopy])->withInput();
+                }
+
+                $captchaData = $this->verifyRecaptcha(config('services.recaptcha.secret_key'), $recaptchaToken, $request->ip());
+
+                if ($captchaData !== null) {
+                    Log::warning('reCAPTCHA result - token_type: v3, score: ' . ($captchaData['score'] ?? 'n/a') . ', action: ' . ($captchaData['action'] ?? 'n/a') . ', success: ' . (($captchaData['success'] ?? false) ? 'true' : 'false') . ', hostname: ' . ($captchaData['hostname'] ?? 'n/a'));
+
+                    if (
+                        !($captchaData['success'] ?? false) ||
+                        ($captchaData['score'] ?? 0) < config('services.recaptcha.score_threshold') ||
+                        ($captchaData['action'] ?? '') !== 'submit_patient'
+                    ) {
+                        // v3 rejected → offer the v2 checkbox challenge instead of
+                        // hard-failing. Flash the flag so the form renders the widget.
+                        return back()
+                            ->with('show_recaptcha_v2_fallback', true)
+                            ->withInput();
+                    }
+                } else {
+                    Log::warning("reCAPTCHA skipped for patient submission (service unavailable), IP: {$request->ip()}");
+                }
             }
         }
 
@@ -351,8 +365,22 @@ class UsersController extends Controller
                 );
 
             if (!$paymentSuccess['success']) {
+                // Route the failure to a recovery bucket and surface the
+                // COO-approved copy for that bucket. The bucket-specific error
+                // key (payment_recoverable|payment_unrecoverable|payment_transient)
+                // drives both the copy and the bounceback behaviour in the view
+                // (recoverable/transient reopen the payment modal; unrecoverable
+                // shows the email-admin message with no retry CTA).
+                $bucket = $this->classifyPaymentError($paymentSuccess['error_code'] ?? null);
+
+                $paymentErrorCopy = [
+                    'recoverable'   => 'Card was declined. Try a different card or contact your bank.',
+                    'unrecoverable' => 'We couldn\'t process this payment. Email <a href="mailto:admin@studiomeds.com">admin@studiomeds.com</a> for help.',
+                    'transient'     => 'Something went wrong processing your payment. Please try again in a moment. If you keep seeing this, email <a href="mailto:admin@studiomeds.com">admin@studiomeds.com</a> and we\'ll help sort it out.',
+                ];
+
                 return back()
-                    ->withErrors(['payment' => 'Payment failed: ' . $paymentSuccess['message']])
+                    ->withErrors(['payment_' . $bucket => $paymentErrorCopy[$bucket]])
                     ->withInput();
             }
         }
@@ -602,6 +630,70 @@ class UsersController extends Controller
             session()->flash('completed_procedure_type', $patient->procedure_type);
 
             return redirect('users/thank_you/');
+    }
+
+    /**
+     * Verify a reCAPTCHA token against Google's siteverify endpoint.
+     *
+     * Returns the decoded response array, or null when the endpoint is
+     * unreachable / times out / returns nothing parseable. Callers treat null
+     * as "service unavailable" and fail open (mirrors the existing v3 behaviour).
+     * Shared by the v3 (invisible) and v2 (checkbox fallback) verification paths.
+     */
+    private function verifyRecaptcha(?string $secret, string $token, ?string $ip): ?array
+    {
+        try {
+            $response = Http::timeout(5)->asForm()->post(
+                'https://www.google.com/recaptcha/api/siteverify',
+                [
+                    'secret'   => $secret,
+                    'response' => $token,
+                    'remoteip' => $ip,
+                ]
+            );
+            $data = $response->json();
+            return is_array($data) ? $data : null;
+        } catch (\Exception $e) {
+            Log::warning('reCAPTCHA verification unavailable: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Classify an Authorize.net charge failure into a recovery bucket so the
+     * payment bounceback can show the right COO-approved copy and behaviour.
+     *
+     * - recoverable:   card-level problems the patient can fix themselves —
+     *                  declines, invalid number, CVV/AVS, duplicate. Copy invites
+     *                  trying a different card or contacting the bank.
+     * - unrecoverable: merchant/account/processor config the patient cannot fix
+     *                  (e.g. code 17, "merchant doesn't accept this card type").
+     *                  Copy routes them to admin@studiomeds.com, no retry CTA.
+     * - transient:     gateway unreachable / unparseable response / exception —
+     *                  no error_code returned (or 'unknown'). Retrying may work.
+     *
+     * Unmapped numeric codes default to 'transient' (per PM decision): safest —
+     * it invites a retry without falsely blaming the card or sending the patient
+     * to admin. If production logs surface a recurring unmapped code, add it to
+     * the appropriate list here.
+     */
+    private function classifyPaymentError(?string $errorCode): string
+    {
+        if ($errorCode === null || $errorCode === '' || $errorCode === 'unknown') {
+            return 'transient';
+        }
+
+        $recoverable   = ['2', '6', '11', '27', '37', '65', '78', '200', '251'];
+        $unrecoverable = ['17', '19', '26', '33', '50', '250', '252'];
+
+        if (in_array($errorCode, $recoverable, true)) {
+            return 'recoverable';
+        }
+        if (in_array($errorCode, $unrecoverable, true)) {
+            return 'unrecoverable';
+        }
+
+        return 'transient';
     }
 
     public function show_cqi($patient_id)
