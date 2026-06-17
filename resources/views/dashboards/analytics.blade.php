@@ -17,6 +17,9 @@
                     <a href="{{ url('/dashboard/sponsorship') }}" class="btn btn-secondary btn-sm">
                         &#x1F4DD; Sponsorship
                     </a>
+                    <a href="{{ url('/dashboard/alerts') }}" class="btn btn-warning btn-sm">
+                        &#9888; Alerts
+                    </a>
                 </div>
             </div>
 

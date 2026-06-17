@@ -48,6 +48,8 @@ Route::group(['middleware' => 'auth'], function () {
     Route::post('/dashboard/patient/{id}/prescription/resend', 'App\Http\Controllers\DashboardController@prescriptionResend');
     Route::get('/dashboard/sponsorship', [DashboardController::class, 'sponsorshipDashboard'])->name('dashboard.sponsorship');
     Route::get('/dashboard/sponsorship/export', [DashboardController::class, 'exportSponsorship'])->name('dashboard.sponsorship.export');
+    Route::get('/dashboard/alerts', [DashboardController::class, 'alerts'])->name('dashboard.alerts');
+    Route::post('/dashboard/alerts/{alert}/recover', [DashboardController::class, 'recoverChargeNoRecord'])->name('dashboard.alerts.recover');
 });
 
 Route::post('/ajax/record_acknowledgement', 'App\Http\Controllers\UsersController@recordAcknowledgement');
