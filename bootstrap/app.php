@@ -29,5 +29,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // PCI-DSS: never flash card data into the session on the framework's
+        // automatic redirect-with-input after a ValidationException (Vector A).
+        // Manual ->withInput() bouncebacks are filtered separately via
+        // UsersController::cardSafeInput() (Vector B). Shared field list.
+        $exceptions->dontFlash(config('payment.card_fields_to_exclude'));
     })->create();
