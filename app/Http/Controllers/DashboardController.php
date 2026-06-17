@@ -11,6 +11,8 @@ use App\Models\UtmVisit;
 use App\Models\DiscountCode;
 use App\Models\DiscountRedemption;
 use App\Models\PrescriptionAccessLog;
+use App\Models\Alert;
+use App\Models\PendingSubmission;
 use App\Services\PrescriptionService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Session;
@@ -926,5 +928,120 @@ class DashboardController extends Controller
             }
             fclose($out);
         }, $filename, $headers);
+    }
+
+    // ── Unified Alerts Tab (charge-but-no-record recovery — Finding #5) ─────
+
+    /**
+     * Render the unified Alerts tab: all unresolved alerts, most recent first.
+     * Polymorphic by design — additional alert types render alongside
+     * charge_no_record without changes here.
+     */
+    public function alerts()
+    {
+        if (session()->get('user_type') != 1) {
+            abort(403);
+        }
+
+        $alerts = Alert::unresolved()
+            ->with('alertable')
+            ->latest()
+            ->get();
+
+        return view('dashboards/alerts', ['alerts' => $alerts]);
+    }
+
+    /**
+     * Recover a charge_no_record alert: promote the preserved submission into a
+     * fully-approved patient, generate + send the prescription, and resolve the
+     * alert. Mirrors approvePatient() once the patient record exists.
+     */
+    public function recoverChargeNoRecord(Request $request, Alert $alert)
+    {
+        if (session()->get('user_type') != 1) {
+            abort(403);
+        }
+
+        // Guard: only an unresolved charge_no_record alert backed by an open
+        // pending submission is recoverable. Anything else is a no-op redirect.
+        $ps = $alert->alertable;
+        if (
+            $alert->type !== 'charge_no_record'
+            || $alert->resolved_at !== null
+            || !($ps instanceof PendingSubmission)
+            || $ps->recovery_status !== 'open'
+        ) {
+            Session::flash('type', 'error');
+            Session::flash('message', 'This alert is no longer recoverable (already resolved or invalid).');
+            return redirect('/dashboard/alerts');
+        }
+
+        try {
+            $patient = DB::transaction(function () use ($ps) {
+                // Refill the existing form-start stub row when present; otherwise
+                // create a fresh patient record.
+                $patient = $ps->patient_id ? Patients::find($ps->patient_id) : null;
+                if (!$patient) {
+                    $patient = new Patients();
+                }
+
+                $patient->first_name         = $ps->first_name;
+                $patient->last_name          = $ps->last_name;
+                $patient->date_of_birth      = $ps->date_of_birth;
+                $patient->email              = $ps->email;
+                $patient->street_address     = $ps->street_address;
+                $patient->city               = $ps->city;
+                $patient->state              = $ps->state;
+                $patient->zip                = $ps->zip;
+                $patient->procedure_type     = $ps->procedure_type;
+                $patient->artist_id          = $ps->artist_id;
+                $patient->artist_name        = $ps->artist_name;
+                $patient->name_of_shop       = $ps->name_of_shop;
+                $patient->drivers_license    = $ps->drivers_license_path;
+                $patient->patient_photo      = $ps->selfie_path;
+                $patient->verification_method = $ps->verification_method ?: 'manual_fallback';
+                $patient->didit_session_id   = $ps->didit_session_id;
+                $patient->save();
+
+                // Create / fill the CQI row from preserved answers; approve it.
+                $answers = PatientsCQI::firstOrNew(['patient_id' => $patient->id]);
+                $answers->fill($ps->cqi_answers ?? []);
+                $answers->patient_id = $patient->id;
+                $answers->artist_id  = $ps->artist_id;
+                $answers->status     = 1; // approved
+                $answers->save();
+
+                return $patient;
+            });
+        } catch (\Throwable $e) {
+            Log::critical('Charge-no-record recovery failed for alert ' . $alert->id . ': ' . $e->getMessage());
+            Session::flash('type', 'error');
+            Session::flash('message', 'Recovery failed — the patient was not created. Please try again or contact support.');
+            return redirect('/dashboard/alerts');
+        }
+
+        // Generate + persist the prescription PDFs (reuses June 9 storage layer),
+        // then dispatch the approval email with the stored paths attached.
+        $patient->load('patientsCQI');
+        $this->persistPrescription($patient);
+
+        $storedPaths = $patient->patientsCQI ? ($patient->patientsCQI->prescription_paths ?: null) : null;
+        \App\Jobs\SendPatientApprovalEmail::dispatch($patient->id, $storedPaths);
+
+        // Resolve the alert + the preserved submission.
+        $alert->resolved_at = now();
+        $alert->resolved_by_admin_user_id = Auth::id();
+        $alert->save();
+
+        $ps->recovery_status = 'resolved';
+        $ps->resolved_at = now();
+        $ps->save();
+
+        // Audit trail — reuse prescription_access_log with the new action type.
+        $this->logPrescriptionAccess($request, $patient, 'recovery_generate_send', null);
+
+        Session::flash('type', 'success');
+        Session::flash('message', 'Prescription generated and sent to ' . $patient->email . '. Patient moved to the Approved tab.');
+        return redirect('/dashboard/alerts');
     }
 }

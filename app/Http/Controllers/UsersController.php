@@ -396,6 +396,117 @@ class UsersController extends Controller
 
         $authorizeNetTxnId = $paymentSuccess['transaction_id'] ?? null;
 
+        // ── ID-image storage (moved outside the DB transaction — F1) ─────────
+        // Files are written to disk before the transaction so both the files and
+        // the paths recorded in pending_submissions survive a post-charge
+        // rollback. Storage is not transactional, so this is behaviourally
+        // identical on the happy path; it only guarantees the paths exist for
+        // recovery when the post-charge write fails.
+        $driversLicensePath = null;
+        $selfiePath = null;
+
+        if ($request->hasFile('drivers_license_image')) {
+            try {
+                $path = $request->file('drivers_license_image')
+                    ->store("uploads/{$patient->id}/drivers_license", 'public');
+                $driversLicensePath = $path ?: null;
+                if (!$driversLicensePath) {
+                    Log::error("Driver's license upload returned false for patient {$patient->id}");
+                }
+            } catch (\Exception $e) {
+                Log::error("Driver's license upload failed for patient {$patient->id}: " . $e->getMessage());
+            }
+        } else {
+            Log::warning("No driver's license file received for patient {$patient->id}");
+        }
+
+        if ($request->hasFile('selfie_image')) {
+            try {
+                $path = $request->file('selfie_image')
+                    ->store("uploads/{$patient->id}/selfie", 'public');
+                $selfiePath = $path ?: null;
+                if (!$selfiePath) {
+                    Log::error("Selfie upload returned false for patient {$patient->id}");
+                }
+            } catch (\Exception $e) {
+                Log::error("Selfie upload failed for patient {$patient->id}: " . $e->getMessage());
+            }
+        } else {
+            Log::warning("No selfie file received for patient {$patient->id}");
+        }
+
+        // ── Assemble the CQI answer set (base + procedure-specific add-ons) ──
+        // Captured once here so the preserved row carries the full medical
+        // picture needed to recreate the patients_cqi row during recovery.
+        $cqiAnswers = [
+            'lidocaine'         => $request->lidocaine,
+            'bactine'           => $request->bactine,
+            'broken_skin'       => $request->broken_skin,
+            'eczema'            => $request->eczema,
+            'heart_rhythm'      => $request->heart_rhythm,
+            'liver_disease'     => $request->liver_disease,
+            'seizures'          => $request->seizures,
+            'pregnant'          => $request->pregnant,
+            'antiarrhythmic'    => $request->antiarrhythmic,
+            'seizure_meds'      => $request->seizure_meds,
+            'fainted'           => $request->fainted,
+            'methemoglobinemia' => $request->methemoglobinemia,
+        ];
+        if ($request->procedure_type === 'lip_blush') {
+            $cqiAnswers['lip_cold_sore_active'] = $request->lip_cold_sore_active;
+        }
+        if ($request->procedure_type === 'eyeliner') {
+            $cqiAnswers['eye_infection_active']   = $request->eye_infection_active;
+            $cqiAnswers['recent_eye_surgery']     = $request->recent_eye_surgery;
+            $cqiAnswers['contacts_cannot_remove'] = $request->contacts_cannot_remove;
+            $cqiAnswers['severe_dry_eye']         = $request->severe_dry_eye;
+        }
+
+        // ── Preserve intake data AFTER charge confirmation, BEFORE the txn ───
+        // Hard constraint (Finding #5): only submissions with a verified
+        // Authorize.net transaction_id are preserved — enforced by gating on
+        // $authorizeNetTxnId AND by the NOT NULL transaction_id column. Free /
+        // comped flows (no charge → null txn id) are intentionally not preserved.
+        // Written outside the transaction so it survives the rollback below.
+        $pendingSubmission = null;
+        if ($authorizeNetTxnId) {
+            try {
+                $pendingSubmission = \App\Models\PendingSubmission::create([
+                    'patient_id'           => $patient->id,
+                    'transaction_id'       => $authorizeNetTxnId,
+                    'charged_amount'       => $chargeAmount ?? null,
+                    'charged_at'           => now(),
+                    'first_name'           => $request->first_name,
+                    'last_name'            => $request->last_name,
+                    'email'                => $request->email,
+                    'date_of_birth'        => $request->date_of_birth,
+                    'street_address'       => $request->street_address,
+                    'city'                 => $request->city,
+                    'state'                => $request->state,
+                    'zip'                  => $request->zip,
+                    'procedure_type'       => $request->procedure_type,
+                    'artist_id'            => $request->artist_id ?? null,
+                    'artist_name'          => $request->artist_name ?? null,
+                    'name_of_shop'         => $request->name_of_shop ?? null,
+                    'cqi_answers'          => $cqiAnswers,
+                    'drivers_license_path' => $driversLicensePath,
+                    'selfie_path'          => $selfiePath,
+                    'verification_method'  => $patient->verification_method,
+                    'didit_session_id'     => $patient->didit_session_id,
+                    'recovery_status'      => 'open',
+                ]);
+            } catch (\Throwable $e) {
+                // Preservation must never block the patient flow; log and proceed.
+                Log::critical('Failed to write pending_submission after charge', [
+                    'patient_email'                => $request->input('email'),
+                    'authorize_net_transaction_id' => $authorizeNetTxnId,
+                    'error'                        => $e->getMessage(),
+                ]);
+            }
+        }
+
+        $postChargeSucceeded = false;
+
         try {
             DB::beginTransaction();
 
@@ -412,41 +523,8 @@ class UsersController extends Controller
             $patient->zip = $request->zip;
             $patient->procedure_type = $request->procedure_type;
 
-            $driversLicensePath = null;
-            $selfiePath = null;
-
             // Save the user data
             $patient->save();
-
-            if ($request->hasFile('drivers_license_image')) {
-                try {
-                    $path = $request->file('drivers_license_image')
-                        ->store("uploads/{$patient->id}/drivers_license", 'public');
-                    $driversLicensePath = $path ?: null;
-                    if (!$driversLicensePath) {
-                        Log::error("Driver's license upload returned false for patient {$patient->id}");
-                    }
-                } catch (\Exception $e) {
-                    Log::error("Driver's license upload failed for patient {$patient->id}: " . $e->getMessage());
-                }
-            } else {
-                Log::warning("No driver's license file received for patient {$patient->id}");
-            }
-
-            if ($request->hasFile('selfie_image')) {
-                try {
-                    $path = $request->file('selfie_image')
-                        ->store("uploads/{$patient->id}/selfie", 'public');
-                    $selfiePath = $path ?: null;
-                    if (!$selfiePath) {
-                        Log::error("Selfie upload returned false for patient {$patient->id}");
-                    }
-                } catch (\Exception $e) {
-                    Log::error("Selfie upload failed for patient {$patient->id}: " . $e->getMessage());
-                }
-            } else {
-                Log::warning("No selfie file received for patient {$patient->id}");
-            }
 
             $imageUpdates = [];
             if ($driversLicensePath !== null) {
@@ -571,6 +649,20 @@ class UsersController extends Controller
             }
 
             DB::commit();
+            $postChargeSucceeded = true;
+
+            // Clean commit — the patient now exists through the normal flow, so
+            // the preserved row is no longer a recovery candidate. Auto-resolve.
+            if ($pendingSubmission) {
+                try {
+                    $pendingSubmission->update([
+                        'recovery_status' => 'resolved',
+                        'resolved_at'     => now(),
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::error('Failed to auto-resolve pending_submission ' . $pendingSubmission->id . ': ' . $e->getMessage());
+                }
+            }
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::critical('Post-payment write failure in store_patient', [
@@ -579,8 +671,32 @@ class UsersController extends Controller
                 'error'                        => $e->getMessage(),
                 'trace'                        => $e->getTraceAsString(),
             ]);
-            throw $e;
+
+            // Finding #5 fix: funds were already captured. Rather than surface a
+            // 500 (and lose the intake), raise an admin Alert pointing at the
+            // preserved submission and let the patient see the normal success
+            // page. Recovery happens from the Alerts tab. Not re-thrown by
+            // design (PM decision D); $postChargeSucceeded stays false so the
+            // success-only side effects below are skipped.
+            if ($pendingSubmission) {
+                try {
+                    \App\Models\Alert::create([
+                        'type'           => 'charge_no_record',
+                        'alertable_type' => \App\Models\PendingSubmission::class,
+                        'alertable_id'   => $pendingSubmission->id,
+                    ]);
+                } catch (\Throwable $alertEx) {
+                    Log::critical('Failed to raise charge_no_record alert for pending_submission ' . $pendingSubmission->id . ': ' . $alertEx->getMessage());
+                }
+            }
         }
+
+            // Success-only post-commit side effects. Skipped entirely on the
+            // Finding #5 failure path — the patient still sees the success page,
+            // but no discount/UTM/admin-email work runs against a rolled-back
+            // record (and the deferred admin-notification roadmap item is not
+            // triggered for failed submissions).
+            if ($postChargeSucceeded) {
 
             // ── Record discount redemption + bump usage count ─────────────
             if ($resolvedCode) {
@@ -635,7 +751,10 @@ class UsersController extends Controller
             $emailmessage = "New Submission:" . $patient->first_name . ' ' . $patient->last_name;
 
             \App\Jobs\SendAdminNotificationEmail::dispatch($emailmessage, $patient->id);
+            } // end success-only post-commit side effects
 
+            // Patient sees the normal success page on both the happy path and
+            // the Finding #5 failure path (failure is invisible to them).
             session()->flash('completed_procedure_type', $patient->procedure_type);
 
             return redirect('users/thank_you/');
