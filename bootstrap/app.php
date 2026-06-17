@@ -34,4 +34,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // Manual ->withInput() bouncebacks are filtered separately via
         // UsersController::cardSafeInput() (Vector B). Shared field list.
         $exceptions->dontFlash(config('payment.card_fields_to_exclude'));
+
+        // Render a branded, on-platform page when a CSRF token expires (session
+        // timeout) instead of Laravel's bare 419. Copy is marketing-locked.
+        $exceptions->renderable(function (\Illuminate\Session\TokenMismatchException $e) {
+            return response()->view('errors.419', [], 419);
+        });
     })->create();
