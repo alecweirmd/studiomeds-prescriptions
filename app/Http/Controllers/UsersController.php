@@ -198,7 +198,7 @@ class UsersController extends Controller
                         return back()
                             ->with('show_recaptcha_v2_fallback', true)
                             ->withErrors(['captcha' => $captchaRejectionCopy])
-                            ->withInput();
+                            ->withInput($this->cardSafeInput($request));
                     }
                     // v2 success → fall through and proceed.
                 } else {
@@ -208,7 +208,7 @@ class UsersController extends Controller
             } else {
                 // ── v3 invisible check (default path) ─────────────────────────
                 if (!$recaptchaToken) {
-                    return back()->withErrors(['captcha' => $captchaRejectionCopy])->withInput();
+                    return back()->withErrors(['captcha' => $captchaRejectionCopy])->withInput($this->cardSafeInput($request));
                 }
 
                 $captchaData = $this->verifyRecaptcha(config('services.recaptcha.secret_key'), $recaptchaToken, $request->ip());
@@ -225,7 +225,7 @@ class UsersController extends Controller
                         // hard-failing. Flash the flag so the form renders the widget.
                         return back()
                             ->with('show_recaptcha_v2_fallback', true)
-                            ->withInput();
+                            ->withInput($this->cardSafeInput($request));
                     }
                 } else {
                     Log::warning("reCAPTCHA skipped for patient submission (service unavailable), IP: {$request->ip()}");
@@ -290,14 +290,14 @@ class UsersController extends Controller
             if ((int) $request->input($field) === 1) {
                 return back()->withErrors([
                     'medical' => 'Based on your medical history, please see an in-person provider for a prescription for topical anesthetics.',
-                ])->withInput();
+                ])->withInput($this->cardSafeInput($request));
             }
         }
 
         $patient = Patients::find($request->patient_id);
 
         if (!$patient) {
-            return back()->withErrors(['patient' => 'Something went wrong.  Please refresh the page and try again.'])->withInput();
+            return back()->withErrors(['patient' => 'Something went wrong.  Please refresh the page and try again.'])->withInput($this->cardSafeInput($request));
         }
 
         // ── Resolve referral / discount code (server-side authoritative) ──
@@ -323,7 +323,7 @@ class UsersController extends Controller
                             : ($resolvedCode->usage_count >= $resolvedCode->usage_cap ? 'failed_exhausted' : 'failed_invalid'),
                     ]);
                 }
-                return back()->withErrors(['applied_code' => 'The referral code is no longer valid. Please remove it and try again.'])->withInput();
+                return back()->withErrors(['applied_code' => 'The referral code is no longer valid. Please remove it and try again.'])->withInput($this->cardSafeInput($request));
             }
 
             if ($resolvedCode->discount_type === 'free') {
@@ -340,6 +340,15 @@ class UsersController extends Controller
         }
 
         if (!$isFreeFlow) {
+            // Defensive digit-sanitize before validation/charge: strip spaces and
+            // any other non-digits (e.g. from autofill) so the regex rules and the
+            // downstream Authorize.net charge see clean digit strings. Mirrors the
+            // client-side input handlers; client + server kept in sync.
+            $request->merge([
+                'card_number' => preg_replace('/\D/', '', (string) $request->input('card_number')),
+                'card_cvc'    => preg_replace('/\D/', '', (string) $request->input('card_cvc')),
+            ]);
+
             $request->validate([
                 'card_number'    => ['required', 'regex:/^\d{13,19}$/'],
                 'card_exp_month' => 'required|digits:2',
@@ -381,7 +390,7 @@ class UsersController extends Controller
 
                 return back()
                     ->withErrors(['payment_' . $bucket => $paymentErrorCopy[$bucket]])
-                    ->withInput();
+                    ->withInput($this->cardSafeInput($request));
             }
         }
 
@@ -630,6 +639,19 @@ class UsersController extends Controller
             session()->flash('completed_procedure_type', $patient->procedure_type);
 
             return redirect('users/thank_you/');
+    }
+
+    /**
+     * Request input with card-data fields stripped, for safe session flashing.
+     *
+     * PCI-DSS: manual ->withInput() bouncebacks must never persist card data
+     * (PAN/CVC/expiry) into the session (Vector B). The excluded field list is
+     * the single source of truth in config/payment.php, shared with the
+     * framework's automatic-flash guard in bootstrap/app.php (Vector A).
+     */
+    private function cardSafeInput(Request $request): array
+    {
+        return $request->except(config('payment.card_fields_to_exclude'));
     }
 
     /**

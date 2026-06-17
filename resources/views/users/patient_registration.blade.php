@@ -773,25 +773,25 @@
                     <div class="col-12 col-md-6">
                         <label>Card Number</label>
                         <input type="text" id="modal_card_number" name="modal_card_number" class="form-control"
-                               inputmode="numeric" placeholder="Card number" value="{{ old('modal_card_number') }}" autocomplete="cc-number">
+                               inputmode="numeric" placeholder="Card number" value="" autocomplete="cc-number">
                     </div>
 
                     <div class="col-4 col-md-2">
                         <label>Exp (MM)</label>
                         <input type="text" id="modal_exp_month" name="modal_exp_month" class="form-control"
-                               maxlength="2" placeholder="MM" inputmode="numeric" value="{{ old('modal_exp_month') }}" autocomplete="cc-exp-month">
+                               maxlength="2" placeholder="MM" inputmode="numeric" value="" autocomplete="cc-exp-month">
                     </div>
 
                     <div class="col-4 col-md-2">
                         <label>Exp (YY)</label>
                         <input type="text" id="modal_exp_year" name="modal_exp_year" class="form-control"
-                               maxlength="2" placeholder="YY" inputmode="numeric" value="{{ old('modal_exp_year') }}" autocomplete="cc-exp-year">
+                               maxlength="2" placeholder="YY" inputmode="numeric" value="" autocomplete="cc-exp-year">
                     </div>
 
                     <div class="col-4 col-md-2">
                         <label>CVC</label>
                         <input type="text" id="modal_cvc" name="modal_cvc" class="form-control"
-                               inputmode="numeric" maxlength="4" placeholder="CVC" value="{{ old('modal_cvc') }}" autocomplete="cc-csc">
+                               inputmode="numeric" maxlength="4" placeholder="CVC" value="" autocomplete="cc-csc">
                     </div>
 
                     <input type="hidden" id="modal_payment_amount" value="35.00">
@@ -1416,6 +1416,17 @@
         $('#modal_exp_year').on('input', function() {
             this.value = this.value.replace(/\D/g, '').slice(0, 2);
             if (this.value.length === 2) { $('#modal_cvc').focus(); }
+        });
+
+        // Digit-sanitize card number + CVC on input (strip spaces / autofill noise)
+        // so the Luhn check and server-side regex see clean digit strings. Mirrors
+        // the exp-field handlers above; bound before the validation handler below.
+        $('#modal_card_number').on('input', function() {
+            this.value = this.value.replace(/\D/g, '').slice(0, 19);
+        });
+
+        $('#modal_cvc').on('input', function() {
+            this.value = this.value.replace(/\D/g, '').slice(0, 4);
         });
 
         // Luhn (mod-10) checksum. Network-agnostic: validates 15-digit AmEx and
