@@ -98,5 +98,28 @@ class SendPatientApprovalEmail implements ShouldQueue
     public function failed(\Throwable $e): void
     {
         Log::error("Patient approval email failed for patient {$this->patientId}: " . $e->getMessage());
+
+        // Surface the failure in the unified Alerts tab so an admin can resend
+        // or mark it handled out-of-band (Audit Finding #9). Each genuine failure
+        // creates its own alert — repeated failures on a patient are signal, not
+        // noise. Alert creation must never throw out of failed(): if the DB is
+        // unavailable, the Log::error above is still the durable record.
+        try {
+            \App\Models\Alert::create([
+                'type'           => 'email_delivery_failed',
+                'alertable_type' => Patients::class,
+                'alertable_id'   => $this->patientId,
+                'metadata'       => [
+                    'failure_reason' => $e->getMessage(),
+                    'attempt_count'  => $this->attempts(),
+                    'failed_at'      => now()->toIso8601String(),
+                ],
+            ]);
+        } catch (\Throwable $alertException) {
+            Log::critical(
+                "Failed to create email_delivery_failed alert for patient {$this->patientId}: "
+                . $alertException->getMessage()
+            );
+        }
     }
 }

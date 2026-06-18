@@ -170,8 +170,13 @@
                      human here, then resubmits. The widget is rendered by grecaptcha into
                      #recaptcha-v2-widget on load (see the script block below). --}}
                 @if (session('show_recaptcha_v2_fallback'))
+                {{-- Marketing-locked banner shown above the v2 widget on fallback
+                     (Audit Finding #8). Copy is authoritative — do not edit. --}}
+                <div class="alert alert-info" role="alert">
+                    <strong>Quick check before we continue</strong><br>
+                    We need one quick verification before processing your request. Please complete the check below.
+                </div>
                 <div class="alert alert-warning" id="recaptcha-v2-wrap">
-                    <p class="mb-2">Please complete the verification below to continue.</p>
                     <div id="recaptcha-v2-widget"></div>
                 </div>
                 @endif

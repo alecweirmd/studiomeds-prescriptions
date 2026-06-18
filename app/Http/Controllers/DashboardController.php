@@ -1044,4 +1044,79 @@ class DashboardController extends Controller
         Session::flash('message', 'Prescription generated and sent to ' . $patient->email . '. Patient moved to the Approved tab.');
         return redirect('/dashboard/alerts');
     }
+
+    /**
+     * Recover an email_delivery_failed alert by resending the approval email
+     * (Audit Finding #9). Reuses the June 9 resend mechanic — preserved
+     * prescription PDFs are re-attached when present; legacy approvals fall back
+     * to fresh regeneration in the job. Resolves the alert on dispatch.
+     *
+     * Note: dispatch success is not send success. If the re-dispatched job later
+     * fails, the job's failed() handler creates a fresh email_delivery_failed
+     * alert (PM-accepted: repeated failures are signal, not noise).
+     */
+    public function resendApprovalFromAlert(Request $request, Alert $alert)
+    {
+        if (session()->get('user_type') != 1) {
+            abort(403);
+        }
+
+        $patient = $alert->alertable;
+        if (
+            $alert->type !== 'email_delivery_failed'
+            || $alert->resolved_at !== null
+            || !($patient instanceof Patients)
+        ) {
+            Session::flash('type', 'error');
+            Session::flash('message', 'This alert can no longer be resent (already resolved or invalid).');
+            return redirect('/dashboard/alerts');
+        }
+
+        // Same lookup as prescriptionResend(): re-attach the stored PDF(s) when
+        // present, otherwise the job regenerates fresh.
+        $patient->loadMissing('patientsCQI');
+        $storedPaths = $patient->patientsCQI ? ($patient->patientsCQI->prescription_paths ?: null) : null;
+        \App\Jobs\SendPatientApprovalEmail::dispatch($patient->id, $storedPaths);
+
+        $alert->resolved_at = now();
+        $alert->resolved_by_admin_user_id = Auth::id();
+        $alert->save();
+
+        $this->logPrescriptionAccess($request, $patient, 'recovery_resend_email', null);
+
+        Session::flash('type', 'success');
+        Session::flash('message', 'Approval email re-sent to ' . $patient->email . '. Alert resolved.');
+        return redirect('/dashboard/alerts');
+    }
+
+    /**
+     * Mark an alert resolved without taking any recovery action — for cases an
+     * admin handled out of band (Audit Finding #9). No email is dispatched.
+     */
+    public function markAlertResolved(Request $request, Alert $alert)
+    {
+        if (session()->get('user_type') != 1) {
+            abort(403);
+        }
+
+        if ($alert->resolved_at !== null) {
+            Session::flash('type', 'error');
+            Session::flash('message', 'This alert is already resolved.');
+            return redirect('/dashboard/alerts');
+        }
+
+        $alert->resolved_at = now();
+        $alert->resolved_by_admin_user_id = Auth::id();
+        $alert->save();
+
+        // Audit trail — log against the patient when the alert points at one.
+        $patient = $alert->alertable;
+        if ($patient instanceof Patients) {
+            $this->logPrescriptionAccess($request, $patient, 'recovery_mark_resolved', null);
+        }
+
+        Session::flash('type', 'success');
+        Session::flash('message', 'Alert marked resolved.');
+        return redirect('/dashboard/alerts');
+    }
 }

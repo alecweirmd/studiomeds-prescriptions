@@ -50,6 +50,8 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/dashboard/sponsorship/export', [DashboardController::class, 'exportSponsorship'])->name('dashboard.sponsorship.export');
     Route::get('/dashboard/alerts', [DashboardController::class, 'alerts'])->name('dashboard.alerts');
     Route::post('/dashboard/alerts/{alert}/recover', [DashboardController::class, 'recoverChargeNoRecord'])->name('dashboard.alerts.recover');
+    Route::post('/dashboard/alerts/{alert}/resend-email', [DashboardController::class, 'resendApprovalFromAlert'])->name('dashboard.alerts.resend-email');
+    Route::post('/dashboard/alerts/{alert}/mark-resolved', [DashboardController::class, 'markAlertResolved'])->name('dashboard.alerts.mark-resolved');
 });
 
 Route::post('/ajax/record_acknowledgement', 'App\Http\Controllers\UsersController@recordAcknowledgement');
